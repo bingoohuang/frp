@@ -69,11 +69,6 @@ type ServerConfig struct {
 
 	SSHTunnelGateway SSHTunnelGateway `json:"sshTunnelGateway,omitempty"`
 
-	WebServer WebServerConfig `json:"webServer,omitempty"`
-	// EnablePrometheus will export prometheus metrics on webserver address
-	// in /metrics api.
-	EnablePrometheus bool `json:"enablePrometheus,omitempty"`
-
 	Log LogConfig `json:"log,omitempty"`
 
 	Transport ServerTransportConfig `json:"transport,omitempty"`
@@ -102,17 +97,12 @@ func (c *ServerConfig) Complete() {
 	c.Auth.Complete()
 	c.Log.Complete()
 	c.Transport.Complete()
-	c.WebServer.Complete()
 	c.SSHTunnelGateway.Complete()
 
 	c.BindAddr = util.EmptyOr(c.BindAddr, "0.0.0.0")
 	c.BindPort = util.EmptyOr(c.BindPort, 7000)
 	if c.ProxyBindAddr == "" {
 		c.ProxyBindAddr = c.BindAddr
-	}
-
-	if c.WebServer.Port > 0 {
-		c.WebServer.Addr = util.EmptyOr(c.WebServer.Addr, "0.0.0.0")
 	}
 
 	c.VhostHTTPTimeout = util.EmptyOr(c.VhostHTTPTimeout, 60)

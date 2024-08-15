@@ -18,110 +18,19 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
+	"github.com/fatedier/frp/client/proxy"
+	"github.com/fatedier/frp/pkg/util/log"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"slices"
 	"strconv"
-	"time"
-
-	"github.com/fatedier/frp/client/proxy"
-	"github.com/fatedier/frp/pkg/config"
-	"github.com/fatedier/frp/pkg/config/v1/validation"
-	httppkg "github.com/fatedier/frp/pkg/util/http"
-	"github.com/fatedier/frp/pkg/util/log"
-	netpkg "github.com/fatedier/frp/pkg/util/net"
 )
 
 type GeneralResponse struct {
 	Code int
 	Msg  string
-}
-
-func (svr *Service) registerRouteHandlers(helper *httppkg.RouterRegisterHelper) {
-	helper.Router.HandleFunc("/healthz", svr.healthz)
-	subRouter := helper.Router.NewRoute().Subrouter()
-
-	subRouter.Use(helper.AuthMiddleware.Middleware)
-
-	// api, see admin_api.go
-	subRouter.HandleFunc("/api/reload", svr.apiReload).Methods("GET")
-	subRouter.HandleFunc("/api/stop", svr.apiStop).Methods("POST")
-	subRouter.HandleFunc("/api/status", svr.apiStatus).Methods("GET")
-	subRouter.HandleFunc("/api/config", svr.apiGetConfig).Methods("GET")
-	subRouter.HandleFunc("/api/config", svr.apiPutConfig).Methods("PUT")
-
-	// view
-	subRouter.Handle("/favicon.ico", http.FileServer(helper.AssetsFS)).Methods("GET")
-	subRouter.PathPrefix("/static/").Handler(
-		netpkg.MakeHTTPGzipHandler(http.StripPrefix("/static/", http.FileServer(helper.AssetsFS))),
-	).Methods("GET")
-	subRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/static/", http.StatusMovedPermanently)
-	})
-}
-
-// /healthz
-func (svr *Service) healthz(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(200)
-}
-
-// GET /api/reload
-func (svr *Service) apiReload(w http.ResponseWriter, r *http.Request) {
-	res := GeneralResponse{Code: 200}
-	strictConfigMode := false
-	strictStr := r.URL.Query().Get("strictConfig")
-	if strictStr != "" {
-		strictConfigMode, _ = strconv.ParseBool(strictStr)
-	}
-
-	log.Infof("api request [/api/reload]")
-	defer func() {
-		log.Infof("api response [/api/reload], code [%d]", res.Code)
-		w.WriteHeader(res.Code)
-		if len(res.Msg) > 0 {
-			_, _ = w.Write([]byte(res.Msg))
-		}
-	}()
-
-	cliCfg, proxyCfgs, visitorCfgs, _, err := config.LoadClientConfig(svr.configFilePath, strictConfigMode)
-	if err != nil {
-		res.Code = 400
-		res.Msg = err.Error()
-		log.Warnf("reload frpc proxy config error: %s", res.Msg)
-		return
-	}
-	if _, err := validation.ValidateAllClientConfig(cliCfg, proxyCfgs, visitorCfgs); err != nil {
-		res.Code = 400
-		res.Msg = err.Error()
-		log.Warnf("reload frpc proxy config error: %s", res.Msg)
-		return
-	}
-
-	if err := svr.UpdateAllConfigurer(proxyCfgs, visitorCfgs); err != nil {
-		res.Code = 500
-		res.Msg = err.Error()
-		log.Warnf("reload frpc proxy config error: %s", res.Msg)
-		return
-	}
-	log.Infof("success reload conf")
-}
-
-// POST /api/stop
-func (svr *Service) apiStop(w http.ResponseWriter, _ *http.Request) {
-	res := GeneralResponse{Code: 200}
-
-	log.Infof("api request [/api/stop]")
-	defer func() {
-		log.Infof("api response [/api/stop], code [%d]", res.Code)
-		w.WriteHeader(res.Code)
-		if len(res.Msg) > 0 {
-			_, _ = w.Write([]byte(res.Msg))
-		}
-	}()
-
-	go svr.GracefulClose(100 * time.Millisecond)
 }
 
 type StatusResp map[string][]ProxyStatusResp

@@ -59,31 +59,6 @@ func (c *QUICOptions) Complete() {
 	c.MaxIncomingStreams = util.EmptyOr(c.MaxIncomingStreams, 100000)
 }
 
-type WebServerConfig struct {
-	// This is the network address to bind on for serving the web interface and API.
-	// By default, this value is "127.0.0.1".
-	Addr string `json:"addr,omitempty"`
-	// Port specifies the port for the web server to listen on. If this
-	// value is 0, the admin server will not be started.
-	Port int `json:"port,omitempty"`
-	// User specifies the username that the web server will use for login.
-	User string `json:"user,omitempty"`
-	// Password specifies the password that the admin server will use for login.
-	Password string `json:"password,omitempty"`
-	// AssetsDir specifies the local directory that the admin server will load
-	// resources from. If this value is "", assets will be loaded from the
-	// bundled executable using embed package.
-	AssetsDir string `json:"assetsDir,omitempty"`
-	// Enable golang pprof handlers.
-	PprofEnable bool `json:"pprofEnable,omitempty"`
-	// Enable TLS if TLSConfig is not nil.
-	TLS *TLSConfig `json:"tls,omitempty"`
-}
-
-func (c *WebServerConfig) Complete() {
-	c.Addr = util.EmptyOr(c.Addr, "127.0.0.1")
-}
-
 type TLSConfig struct {
 	// CertPath specifies the path of the cert file that client will load.
 	CertFile string `json:"certFile,omitempty"`

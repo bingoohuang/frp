@@ -39,10 +39,6 @@ func ValidateServerConfig(c *v1.ServerConfig) (Warning, error) {
 		errs = AppendError(errs, err)
 	}
 
-	if err := validateWebServerConfig(&c.WebServer); err != nil {
-		errs = AppendError(errs, err)
-	}
-
 	errs = AppendError(errs, ValidatePort(c.BindPort, "bindPort"))
 	errs = AppendError(errs, ValidatePort(c.KCPBindPort, "kcpBindPort"))
 	errs = AppendError(errs, ValidatePort(c.QUICBindPort, "quicBindPort"))

@@ -59,7 +59,6 @@ type ClientCommonConfig struct {
 	Start []string `json:"start,omitempty"`
 
 	Log       LogConfig             `json:"log,omitempty"`
-	WebServer WebServerConfig       `json:"webServer,omitempty"`
 	Transport ClientTransportConfig `json:"transport,omitempty"`
 
 	// UDPPacketSize specifies the udp packet size
@@ -81,7 +80,6 @@ func (c *ClientCommonConfig) Complete() {
 	c.Auth.Complete()
 	c.Log.Complete()
 	c.Transport.Complete()
-	c.WebServer.Complete()
 
 	c.UDPPacketSize = util.EmptyOr(c.UDPPacketSize, 1500)
 }

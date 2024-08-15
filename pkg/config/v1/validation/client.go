@@ -41,10 +41,6 @@ func ValidateClientCommonConfig(c *v1.ClientCommonConfig) (Warning, error) {
 		errs = AppendError(errs, err)
 	}
 
-	if err := validateWebServerConfig(&c.WebServer); err != nil {
-		errs = AppendError(errs, err)
-	}
-
 	if c.Transport.HeartbeatTimeout > 0 && c.Transport.HeartbeatInterval > 0 {
 		if c.Transport.HeartbeatTimeout < c.Transport.HeartbeatInterval {
 			errs = AppendError(errs, fmt.Errorf("invalid transport.heartbeatTimeout, heartbeat timeout should not less than heartbeat interval"))

@@ -183,6 +183,10 @@ func (c *TypedProxyConfig) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	if typeStruct.Type == "" {
+		typeStruct.Type = string(ProxyTypeSTCP)
+	}
+
 	c.Type = typeStruct.Type
 	configurer := NewProxyConfigurerByType(ProxyType(typeStruct.Type))
 	if configurer == nil {

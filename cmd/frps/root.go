@@ -55,19 +55,14 @@ var rootCmd = &cobra.Command{
 		}
 
 		var (
-			svrCfg         *v1.ServerConfig
-			isLegacyFormat bool
-			err            error
+			svrCfg *v1.ServerConfig
+			err    error
 		)
 		if cfgFile != "" {
-			svrCfg, isLegacyFormat, err = config.LoadServerConfig(cfgFile, strictConfigMode)
+			svrCfg, err = config.LoadServerConfig(cfgFile, strictConfigMode)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
-			}
-			if isLegacyFormat {
-				fmt.Printf("WARNING: ini format is deprecated and the support will be removed in the future, " +
-					"please use yaml/json/toml format instead!\n")
 			}
 		} else {
 			serverCfg.Complete()

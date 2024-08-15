@@ -59,13 +59,18 @@ func (c *VisitorBaseConfig) Complete(g *ClientCommonConfig) {
 	if g.User != "" {
 		namePrefix = g.User + "."
 	}
-	c.Name = namePrefix + c.Name
 
 	if c.ServerUser != "" {
 		c.ServerName = c.ServerUser + "." + c.ServerName
 	} else {
 		c.ServerName = namePrefix + c.ServerName
 	}
+
+	if c.Name == "" {
+		c.Name = c.ServerName + "_visitor"
+	}
+
+	c.Name = namePrefix + c.Name
 }
 
 type VisitorConfigurer interface {
@@ -102,6 +107,10 @@ func (c *TypedVisitorConfig) UnmarshalJSON(b []byte) error {
 	}{}
 	if err := json.Unmarshal(b, &typeStruct); err != nil {
 		return err
+	}
+
+	if typeStruct.Type == "" {
+		typeStruct.Type = string(VisitorTypeSTCP)
 	}
 
 	c.Type = typeStruct.Type

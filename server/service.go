@@ -34,13 +34,11 @@ import (
 
 	"github.com/fatedier/frp/pkg/auth"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
-	modelmetrics "github.com/fatedier/frp/pkg/metrics"
 	"github.com/fatedier/frp/pkg/msg"
 	"github.com/fatedier/frp/pkg/nathole"
 	plugin "github.com/fatedier/frp/pkg/plugin/server"
 	"github.com/fatedier/frp/pkg/ssh"
 	"github.com/fatedier/frp/pkg/transport"
-	httppkg "github.com/fatedier/frp/pkg/util/http"
 	"github.com/fatedier/frp/pkg/util/log"
 	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/tcpmux"
@@ -109,9 +107,6 @@ type Service struct {
 	// All resource managers and controllers
 	rc *controller.ResourceController
 
-	// web server for dashboard UI and apis
-	webServer *httppkg.Server
-
 	sshTunnelGateway *ssh.Gateway
 
 	// Verifies authentication based on selected method
@@ -136,20 +131,6 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		return nil, err
 	}
 
-	var webServer *httppkg.Server
-	if cfg.WebServer.Port > 0 {
-		ws, err := httppkg.NewServer(cfg.WebServer)
-		if err != nil {
-			return nil, err
-		}
-		webServer = ws
-
-		modelmetrics.EnableMem()
-		if cfg.EnablePrometheus {
-			modelmetrics.EnablePrometheus()
-		}
-	}
-
 	svr := &Service{
 		ctlManager:    NewControlManager(),
 		pxyManager:    proxy.NewManager(),
@@ -162,13 +143,9 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		sshTunnelListener: netpkg.NewInternalListener(),
 		httpVhostRouter:   vhost.NewRouters(),
 		authVerifier:      auth.NewAuthVerifier(cfg.Auth),
-		webServer:         webServer,
 		tlsConfig:         tlsConfig,
 		cfg:               cfg,
 		ctx:               context.Background(),
-	}
-	if webServer != nil {
-		webServer.RouteRegister(svr.registerRouteHandlers)
 	}
 
 	// Create tcpmux httpconnect multiplexer.
@@ -344,16 +321,6 @@ func (svr *Service) Run(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	svr.ctx = ctx
 	svr.cancel = cancel
-
-	// run dashboard web server.
-	if svr.webServer != nil {
-		go func() {
-			log.Infof("dashboard listen on %s", svr.webServer.Address())
-			if err := svr.webServer.Run(); err != nil {
-				log.Warnf("dashboard server exit with error: %v", err)
-			}
-		}()
-	}
 
 	go svr.HandleListener(svr.sshTunnelListener, true)
 

@@ -21,19 +21,6 @@ import (
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 )
 
-func validateWebServerConfig(c *v1.WebServerConfig) error {
-	if c.TLS != nil {
-		if c.TLS.CertFile == "" {
-			return fmt.Errorf("tls.certFile must be specified when tls is enabled")
-		}
-		if c.TLS.KeyFile == "" {
-			return fmt.Errorf("tls.keyFile must be specified when tls is enabled")
-		}
-	}
-
-	return ValidatePort(c.Port, "webServer.port")
-}
-
 // ValidatePort checks that the network port is in range
 func ValidatePort(port int, fieldPath string) error {
 	if 0 <= port && port <= 65535 {

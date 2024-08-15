@@ -3,9 +3,6 @@ serverPort = 17000
 transport.protocol = "quic"
 
 [[visitors]]
-name = "pp_visitor"
-type = "stcp"
 serverName = "pp"
 secretKey = "2kgCGqCjJ7UgYFk07BgMjQF7XZd"
-bindAddr = "127.0.0.1"
 bindPort = 3000
