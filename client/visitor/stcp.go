@@ -24,6 +24,7 @@ import (
 
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/msg"
+	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/util"
 	"github.com/fatedier/frp/pkg/util/xlog"
 )
@@ -86,6 +87,11 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 	}
 	defer visitorConn.Close()
 
+	target, err := netpkg.ParseTargetHead(userConn)
+	if err != nil {
+		return
+	}
+
 	now := time.Now().Unix()
 	newVisitorConnMsg := &msg.NewVisitorConn{
 		RunID:          sv.helper.RunID(),
@@ -94,6 +100,8 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 		Timestamp:      now,
 		UseEncryption:  sv.cfg.Transport.UseEncryption,
 		UseCompression: sv.cfg.Transport.UseCompression,
+
+		TargetAddr: target,
 	}
 	err = msg.WriteMsg(visitorConn, newVisitorConnMsg)
 	if err != nil {

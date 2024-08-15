@@ -455,7 +455,7 @@ func (svr *Service) handleConnection(ctx context.Context, conn net.Conn, interna
 			conn.Close()
 		}
 	case *msg.NewVisitorConn:
-		if err = svr.RegisterVisitorConn(conn, m); err != nil {
+		if err = svr.RegisterVisitorConn(netpkg.WrapConnTarget(conn, m.TargetAddr), m); err != nil {
 			xl.Warnf("register visitor conn error: %v", err)
 			_ = msg.WriteMsg(conn, &msg.NewVisitorConnResp{
 				ProxyName: m.ProxyName,

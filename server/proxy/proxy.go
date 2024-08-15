@@ -156,6 +156,8 @@ func (pxy *BaseProxy) GetWorkConnFromPool(src, dst net.Addr) (workConn net.Conn,
 			DstAddr:   dstAddr,
 			DstPort:   uint16(dstPort),
 			Error:     "",
+
+			TargetAddr: netpkg.GetTarget(dst),
 		})
 		if err != nil {
 			xl.Warnf("failed to send message to work connection from pool: %v, times: %d", err, i)
@@ -230,7 +232,7 @@ func (pxy *BaseProxy) handleUserTCPConnection(userConn net.Conn) {
 	}
 
 	// try all connections from the pool
-	workConn, err := pxy.GetWorkConnFromPool(userConn.RemoteAddr(), userConn.LocalAddr())
+	workConn, err := pxy.GetWorkConnFromPool(userConn.RemoteAddr(), netpkg.WrapAddrTarget(userConn, userConn.LocalAddr()))
 	if err != nil {
 		return
 	}

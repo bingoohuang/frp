@@ -90,7 +90,7 @@ func (vm *Manager) NewConn(name string, conn net.Conn, timestamp int64, signKey 
 		if useCompression {
 			rwc = libio.WithCompression(rwc)
 		}
-		err = l.l.PutConn(netpkg.WrapReadWriteCloserToConn(rwc, conn))
+		err = l.l.PutConn(netpkg.WrapConnTarget(netpkg.WrapReadWriteCloserToConn(rwc, conn), netpkg.GetTarget(conn)))
 	} else {
 		err = fmt.Errorf("custom listener for [%s] doesn't exist", name)
 		return

@@ -1,0 +1,10 @@
+serverAddr = "127.0.0.1"
+serverPort = 17000
+transport.protocol = "quic"
+
+[[proxies]]
+name = "pp"
+type = "stcp"
+secretKey = "2kgCGqCjJ7UgYFk07BgMjQF7XZd"
+localIP = "127.0.0.1"
+localPort = 22

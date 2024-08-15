@@ -15,6 +15,7 @@
 package proxy
 
 import (
+	"cmp"
 	"context"
 	"io"
 	"net"
@@ -198,7 +199,7 @@ func (pxy *BaseProxy) HandleTCPWorkConnection(workConn net.Conn, m *msg.StartWor
 	}
 
 	localConn, err := libnet.Dial(
-		net.JoinHostPort(baseCfg.LocalIP, strconv.Itoa(baseCfg.LocalPort)),
+		cmp.Or(m.TargetAddr, net.JoinHostPort(baseCfg.LocalIP, strconv.Itoa(baseCfg.LocalPort))),
 		libnet.WithTimeout(10*time.Second),
 	)
 	if err != nil {

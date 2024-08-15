@@ -157,6 +157,8 @@ type StartWorkConn struct {
 	SrcPort   uint16 `json:"src_port,omitempty"`
 	DstPort   uint16 `json:"dst_port,omitempty"`
 	Error     string `json:"error,omitempty"`
+
+	TargetAddr string `json:"target_addr,omitempty"`
 }
 
 type NewVisitorConn struct {
@@ -166,6 +168,8 @@ type NewVisitorConn struct {
 	Timestamp      int64  `json:"timestamp,omitempty"`
 	UseEncryption  bool   `json:"use_encryption,omitempty"`
 	UseCompression bool   `json:"use_compression,omitempty"`
+
+	TargetAddr string `json:"target_addr,omitempty"`
 }
 
 type NewVisitorConnResp struct {
