@@ -75,7 +75,7 @@ func RenderWithTemplate(in []byte, values *Values) ([]byte, error) {
 }
 
 func LoadFileContentWithTemplate(path string, values *Values) ([]byte, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(util.ExpandFile(path))
 	if err != nil {
 		return nil, err
 	}

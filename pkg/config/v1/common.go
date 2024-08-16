@@ -88,7 +88,7 @@ type LogConfig struct {
 }
 
 func (c *LogConfig) Complete() {
-	c.To = util.EmptyOr(c.To, "console")
+	c.To = util.EmptyOr(util.ExpandFile(c.To), "console")
 	c.Level = util.EmptyOr(c.Level, "info")
 	c.MaxDays = util.EmptyOr(c.MaxDays, 3)
 }
