@@ -67,7 +67,7 @@ func (c *VisitorBaseConfig) Complete(g *ClientCommonConfig) {
 	}
 
 	if c.Name == "" {
-		c.Name = c.ServerName + "_visitor"
+		c.Name = c.ServerName + "-visitor"
 	}
 
 	c.Name = namePrefix + c.Name
