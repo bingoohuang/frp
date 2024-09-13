@@ -99,7 +99,6 @@ func (c *ServerConfig) Complete() {
 	c.SSHTunnelGateway.Complete()
 
 	c.BindAddr = cmp.Or(c.BindAddr, "0.0.0.0")
-	c.BindPort = cmp.Or(c.BindPort, 7000)
 	if c.ProxyBindAddr == "" {
 		c.ProxyBindAddr = c.BindAddr
 	}

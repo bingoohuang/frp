@@ -195,22 +195,24 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		}
 	}
 
-	// Listen for accepting connections from client.
-	address := net.JoinHostPort(cfg.BindAddr, strconv.Itoa(cfg.BindPort))
-	ln, err := net.Listen("tcp", address)
-	if err != nil {
-		return nil, fmt.Errorf("create server listener error, %v", err)
+	if cfg.BindPort > 0 {
+		// Listen for accepting connections from client.
+		address := net.JoinHostPort(cfg.BindAddr, strconv.Itoa(cfg.BindPort))
+		ln, err := net.Listen("tcp", address)
+		if err != nil {
+			return nil, fmt.Errorf("create server listener error, %v", err)
+		}
+
+		svr.muxer = mux.NewMux(ln)
+		svr.muxer.SetKeepAlive(time.Duration(cfg.Transport.TCPKeepAlive) * time.Second)
+		go func() {
+			_ = svr.muxer.Serve()
+		}()
+		ln = svr.muxer.DefaultListener()
+
+		svr.listener = ln
+		log.Infof("frps tcp listen on %s", address)
 	}
-
-	svr.muxer = mux.NewMux(ln)
-	svr.muxer.SetKeepAlive(time.Duration(cfg.Transport.TCPKeepAlive) * time.Second)
-	go func() {
-		_ = svr.muxer.Serve()
-	}()
-	ln = svr.muxer.DefaultListener()
-
-	svr.listener = ln
-	log.Infof("frps tcp listen on %s", address)
 
 	// Listen for accepting connections from client using kcp protocol.
 	if cfg.KCPBindPort > 0 {
@@ -246,12 +248,14 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		log.Infof("frps sshTunnelGateway listen on port %d", cfg.SSHTunnelGateway.BindPort)
 	}
 
-	// Listen for accepting connections from client using websocket protocol.
-	websocketPrefix := []byte("GET " + netpkg.FrpWebsocketPath)
-	websocketLn := svr.muxer.Listen(0, uint32(len(websocketPrefix)), func(data []byte) bool {
-		return bytes.Equal(data, websocketPrefix)
-	})
-	svr.websocketListener = netpkg.NewWebsocketListener(websocketLn)
+	if svr.muxer != nil {
+		// Listen for accepting connections from client using websocket protocol.
+		websocketPrefix := []byte("GET " + netpkg.FrpWebsocketPath)
+		websocketLn := svr.muxer.Listen(0, uint32(len(websocketPrefix)), func(data []byte) bool {
+			return bytes.Equal(data, websocketPrefix)
+		})
+		svr.websocketListener = netpkg.NewWebsocketListener(websocketLn)
+	}
 
 	// Create http vhost muxer.
 	if cfg.VhostHTTPPort > 0 {
@@ -301,12 +305,13 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		}
 	}
 
-	// frp tls listener
-	svr.tlsListener = svr.muxer.Listen(2, 1, func(data []byte) bool {
-		// tls first byte can be 0x16 only when vhost https port is not same with bind port
-		return int(data[0]) == netpkg.FRPTLSHeadByte || int(data[0]) == 0x16
-	})
-
+	if svr.muxer != nil {
+		// frp tls listener
+		svr.tlsListener = svr.muxer.Listen(2, 1, func(data []byte) bool {
+			// tls first byte can be 0x16 only when vhost https port is not same with bind port
+			return int(data[0]) == netpkg.FRPTLSHeadByte || int(data[0]) == 0x16
+		})
+	}
 	return svr, nil
 }
 
@@ -323,14 +328,18 @@ func (svr *Service) Run(ctx context.Context) {
 	if svr.quicListener != nil {
 		go svr.HandleQUICListener(svr.quicListener)
 	}
-	go svr.HandleListener(svr.websocketListener, false)
-	go svr.HandleListener(svr.tlsListener, false)
-
+	if svr.websocketListener != nil {
+		go svr.HandleListener(svr.websocketListener, false)
+	}
+	if svr.tlsListener != nil {
+		go svr.HandleListener(svr.tlsListener, false)
+	}
 	if svr.sshTunnelGateway != nil {
 		go svr.sshTunnelGateway.Run()
 	}
-
-	svr.HandleListener(svr.listener, false)
+	if svr.listener != nil {
+		svr.HandleListener(svr.listener, false)
+	}
 
 	<-svr.ctx.Done()
 	// service context may not be canceled by svr.Close(), we should call it here to release resources
