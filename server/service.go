@@ -139,12 +139,11 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 			TCPPortManager: ports.NewManager("tcp", cfg.ProxyBindAddr, cfg.AllowPorts),
 			UDPPortManager: ports.NewManager("udp", cfg.ProxyBindAddr, cfg.AllowPorts),
 		},
-		sshTunnelListener: netpkg.NewInternalListener(),
-		httpVhostRouter:   vhost.NewRouters(),
-		authVerifier:      auth.NewAuthVerifier(cfg.Auth),
-		tlsConfig:         tlsConfig,
-		cfg:               cfg,
-		ctx:               context.Background(),
+		httpVhostRouter: vhost.NewRouters(),
+		authVerifier:    auth.NewAuthVerifier(cfg.Auth),
+		tlsConfig:       tlsConfig,
+		cfg:             cfg,
+		ctx:             context.Background(),
 	}
 
 	// Create tcpmux httpconnect multiplexer.
@@ -240,6 +239,7 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 	}
 
 	if cfg.SSHTunnelGateway.BindPort > 0 {
+		svr.sshTunnelListener = netpkg.NewInternalListener()
 		sshGateway, err := ssh.NewGateway(cfg.SSHTunnelGateway, cfg.ProxyBindAddr, svr.sshTunnelListener)
 		if err != nil {
 			return nil, fmt.Errorf("create ssh gateway error: %v", err)
@@ -320,7 +320,9 @@ func (svr *Service) Run(ctx context.Context) {
 	svr.ctx = ctx
 	svr.cancel = cancel
 
-	go svr.HandleListener(svr.sshTunnelListener, true)
+	if svr.sshTunnelListener != nil {
+		go svr.HandleListener(svr.sshTunnelListener, true)
+	}
 
 	if svr.kcpListener != nil {
 		go svr.HandleListener(svr.kcpListener, false)
@@ -338,7 +340,7 @@ func (svr *Service) Run(ctx context.Context) {
 		go svr.sshTunnelGateway.Run()
 	}
 	if svr.listener != nil {
-		svr.HandleListener(svr.listener, false)
+		go svr.HandleListener(svr.listener, false)
 	}
 
 	<-svr.ctx.Done()

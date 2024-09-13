@@ -4,12 +4,16 @@ github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358/go.mod h1:chxPXzS
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/bingoohuang/ngg/daemon v0.0.0-20240913025408-d6ad25d38d1c h1:n58c+pTq47N78rZLY3gw8TlnQmXsYsqY2VzUunwHGUA=
+github.com/bingoohuang/ngg/daemon v0.0.0-20240913025408-d6ad25d38d1c/go.mod h1:uhVTdPw9eHp7KSOeB01abXTLm2pHGPSZynEOBhD70gg=
+github.com/bingoohuang/ngg/q v0.0.0-20240907082044-e6fedc0af4e8 h1:6hjTTmlQMiAX7tJ2u57BgenaDYMTuUL/Jmw7WMWNekk=
+github.com/bingoohuang/ngg/q v0.0.0-20240907082044-e6fedc0af4e8/go.mod h1:XQOFCRuJHQYRBVaOK/IF08scnC/eGDFyVqI+cYeqye0=
 github.com/bingoohuang/ngg/ss v0.0.0-20240913025408-d6ad25d38d1c h1:QusBMQlR14uL7M6n2ChKzqM91rEnbRGWoKQNQcJyaQM=
 github.com/bingoohuang/ngg/ss v0.0.0-20240913025408-d6ad25d38d1c/go.mod h1:q713LuNHPm6REV+2M0nB+H/MnmUH3dx0Z/UjvKTos68=
 github.com/bingoohuang/ngg/ver v0.0.0-20240913025408-d6ad25d38d1c h1:LZCVsUvUb3QFYEJ4YZ+4jJrKi6//bW5+hkgcnGIPzrg=
 github.com/bingoohuang/ngg/ver v0.0.0-20240913025408-d6ad25d38d1c/go.mod h1:AMbGjgUESq+WgEcYZU4K+SAGU/7OzTRMDCBjovNL56c=
-github.com/bingoohuang/ngg/yaml v0.0.0-20240911112036-2ef0f2d8ae1a h1:koNZs34XhWI9VcrTwJnyAkmdbmYhhoSbnwBXhmp3E8U=
-github.com/bingoohuang/ngg/yaml v0.0.0-20240911112036-2ef0f2d8ae1a/go.mod h1:WZI5bVsBLHZQFLhEWO5DNyAy8bfR8hP/ANRVTQsdHmI=
+github.com/bingoohuang/ngg/yaml v0.0.0-20240913025408-d6ad25d38d1c h1:1s83i4nZMq9PBRrNK3xyom9ev0DTJy4NMspLMcdYUGI=
+github.com/bingoohuang/ngg/yaml v0.0.0-20240913025408-d6ad25d38d1c/go.mod h1:WZI5bVsBLHZQFLhEWO5DNyAy8bfR8hP/ANRVTQsdHmI=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
@@ -70,6 +74,8 @@ github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef h1:A9HsByNhogrvm9cWb
 github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef/go.mod h1:lADxMC39cJJqL93Duh1xhAs4I2Zs8mKS89XWXFGp9cs=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 h1:iQTw/8FWTuc7uiaSepXwyf3o52HaUYcV+Tu66S3F5GA=
+github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0/go.mod h1:1NbS8ALrpOvjt0rHPNLyCIeMtbizbir8U//inJ+zuB8=
 github.com/klauspost/cpuid/v2 v2.2.8 h1:+StwCXwm9PdpiEkPyzBXIy+M9KUb4ODm0Zarf1kS5BM=
 github.com/klauspost/cpuid/v2 v2.2.8/go.mod h1:Lcz8mBdAVJIBVzewtcLocK12l3Y+JytZYpaMropDUws=
 github.com/klauspost/reedsolomon v1.12.4 h1:5aDr3ZGoJbgu/8+j45KtUJxzYm8k08JGtB9Wx1VQ4OA=
@@ -117,6 +123,8 @@ github.com/sagikazarmark/slog-shim v0.1.0 h1:diDBnUNK9N/354PgrxMywXnAwEr1QZcOr6g
 github.com/sagikazarmark/slog-shim v0.1.0/go.mod h1:SrcSrq8aKtyuqEI1uvTDTK1arOWRIczQRv+GVI1AkeQ=
 github.com/samber/lo v1.47.0 h1:z7RynLwP5nbyRscyvcD043DWYoOcYRv3mV8lBeqOCLc=
 github.com/samber/lo v1.47.0/go.mod h1:RmDH9Ct32Qy3gduHQuKJ3gW1fMHAnE/fAzQuf6He5cU=
+github.com/sevlyar/go-daemon v0.1.6 h1:EUh1MDjEM4BI109Jign0EaknA2izkOyi0LV3ro3QQGs=
+github.com/sevlyar/go-daemon v0.1.6/go.mod h1:6dJpPatBT9eUwM5VCw9Bt6CdX9Tk6UWvhW3MebLDRKE=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
 github.com/spf13/afero v1.11.0 h1:WJQKhtpdm3v2IzqG8VMqrr6Rf3UYpEF239Jy9wNepM8=

@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/bingoohuang/ngg/daemon/autoload"
 	"github.com/bingoohuang/ngg/ss"
 	"github.com/bingoohuang/ngg/ver"
 	"github.com/fatedier/frp/client"
