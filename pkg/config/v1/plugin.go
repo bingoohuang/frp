@@ -59,9 +59,7 @@ func (c *TypedClientPluginOptions) UnmarshalJSON(b []byte) error {
 	options := reflect.New(v).Interface().(ClientPluginOptions)
 
 	decoder := json.NewDecoder(bytes.NewBuffer(b))
-	if DisallowUnknownFields {
-		decoder.DisallowUnknownFields()
-	}
+	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(options); err != nil {
 		return fmt.Errorf("unmarshal ClientPluginOptions error: %v", err)

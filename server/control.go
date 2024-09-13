@@ -361,9 +361,6 @@ func (ctl *Control) worker() {
 func (ctl *Control) registerMsgHandlers() {
 	ctl.msgDispatcher.RegisterHandler(&msg.NewProxy{}, ctl.handleNewProxy)
 	ctl.msgDispatcher.RegisterHandler(&msg.Ping{}, ctl.handlePing)
-	ctl.msgDispatcher.RegisterHandler(&msg.NatHoleVisitor{}, msg.AsyncHandler(ctl.handleNatHoleVisitor))
-	ctl.msgDispatcher.RegisterHandler(&msg.NatHoleClient{}, msg.AsyncHandler(ctl.handleNatHoleClient))
-	ctl.msgDispatcher.RegisterHandler(&msg.NatHoleReport{}, msg.AsyncHandler(ctl.handleNatHoleReport))
 	ctl.msgDispatcher.RegisterHandler(&msg.CloseProxy{}, ctl.handleCloseProxy)
 }
 
@@ -429,21 +426,6 @@ func (ctl *Control) handlePing(m msg.Message) {
 	ctl.lastPing.Store(time.Now())
 	xl.Debugf("receive heartbeat")
 	_ = ctl.msgDispatcher.Send(&msg.Pong{})
-}
-
-func (ctl *Control) handleNatHoleVisitor(m msg.Message) {
-	inMsg := m.(*msg.NatHoleVisitor)
-	ctl.rc.NatHoleController.HandleVisitor(inMsg, ctl.msgTransporter, ctl.loginMsg.User)
-}
-
-func (ctl *Control) handleNatHoleClient(m msg.Message) {
-	inMsg := m.(*msg.NatHoleClient)
-	ctl.rc.NatHoleController.HandleClient(inMsg, ctl.msgTransporter)
-}
-
-func (ctl *Control) handleNatHoleReport(m msg.Message) {
-	inMsg := m.(*msg.NatHoleReport)
-	ctl.rc.NatHoleController.HandleReport(inMsg)
 }
 
 func (ctl *Control) handleCloseProxy(m msg.Message) {

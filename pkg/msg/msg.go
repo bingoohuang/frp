@@ -16,7 +16,6 @@ package msg
 
 import (
 	"net"
-	"reflect"
 )
 
 const (
@@ -33,11 +32,6 @@ const (
 	TypePing               = 'h'
 	TypePong               = '4'
 	TypeUDPPacket          = 'u'
-	TypeNatHoleVisitor     = 'i'
-	TypeNatHoleClient      = 'n'
-	TypeNatHoleResp        = 'm'
-	TypeNatHoleSid         = '5'
-	TypeNatHoleReport      = '6'
 )
 
 var msgTypeMap = map[byte]interface{}{
@@ -54,14 +48,7 @@ var msgTypeMap = map[byte]interface{}{
 	TypePing:               Ping{},
 	TypePong:               Pong{},
 	TypeUDPPacket:          UDPPacket{},
-	TypeNatHoleVisitor:     NatHoleVisitor{},
-	TypeNatHoleClient:      NatHoleClient{},
-	TypeNatHoleResp:        NatHoleResp{},
-	TypeNatHoleSid:         NatHoleSid{},
-	TypeNatHoleReport:      NatHoleReport{},
 }
-
-var TypeNameNatHoleResp = reflect.TypeOf(&NatHoleResp{}).Elem().Name()
 
 type ClientSpec struct {
 	// Due to the support of VirtualClient, frps needs to know the client type in order to
@@ -192,59 +179,7 @@ type UDPPacket struct {
 	RemoteAddr *net.UDPAddr `json:"r,omitempty"`
 }
 
-type NatHoleVisitor struct {
-	TransactionID string   `json:"transaction_id,omitempty"`
-	ProxyName     string   `json:"proxy_name,omitempty"`
-	PreCheck      bool     `json:"pre_check,omitempty"`
-	Protocol      string   `json:"protocol,omitempty"`
-	SignKey       string   `json:"sign_key,omitempty"`
-	Timestamp     int64    `json:"timestamp,omitempty"`
-	MappedAddrs   []string `json:"mapped_addrs,omitempty"`
-	AssistedAddrs []string `json:"assisted_addrs,omitempty"`
-}
-
-type NatHoleClient struct {
-	TransactionID string   `json:"transaction_id,omitempty"`
-	ProxyName     string   `json:"proxy_name,omitempty"`
-	Sid           string   `json:"sid,omitempty"`
-	MappedAddrs   []string `json:"mapped_addrs,omitempty"`
-	AssistedAddrs []string `json:"assisted_addrs,omitempty"`
-}
-
 type PortsRange struct {
 	From int `json:"from,omitempty"`
 	To   int `json:"to,omitempty"`
-}
-
-type NatHoleDetectBehavior struct {
-	Role              string       `json:"role,omitempty"` // sender or receiver
-	Mode              int          `json:"mode,omitempty"` // 0, 1, 2...
-	TTL               int          `json:"ttl,omitempty"`
-	SendDelayMs       int          `json:"send_delay_ms,omitempty"`
-	ReadTimeoutMs     int          `json:"read_timeout,omitempty"`
-	CandidatePorts    []PortsRange `json:"candidate_ports,omitempty"`
-	SendRandomPorts   int          `json:"send_random_ports,omitempty"`
-	ListenRandomPorts int          `json:"listen_random_ports,omitempty"`
-}
-
-type NatHoleResp struct {
-	TransactionID  string                `json:"transaction_id,omitempty"`
-	Sid            string                `json:"sid,omitempty"`
-	Protocol       string                `json:"protocol,omitempty"`
-	CandidateAddrs []string              `json:"candidate_addrs,omitempty"`
-	AssistedAddrs  []string              `json:"assisted_addrs,omitempty"`
-	DetectBehavior NatHoleDetectBehavior `json:"detect_behavior,omitempty"`
-	Error          string                `json:"error,omitempty"`
-}
-
-type NatHoleSid struct {
-	TransactionID string `json:"transaction_id,omitempty"`
-	Sid           string `json:"sid,omitempty"`
-	Response      bool   `json:"response,omitempty"`
-	Nonce         string `json:"nonce,omitempty"`
-}
-
-type NatHoleReport struct {
-	Sid     string `json:"sid,omitempty"`
-	Success bool   `json:"success,omitempty"`
 }

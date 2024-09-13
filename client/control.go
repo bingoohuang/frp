@@ -169,17 +169,6 @@ func (ctl *Control) handleNewProxyResp(m msg.Message) {
 	}
 }
 
-func (ctl *Control) handleNatHoleResp(m msg.Message) {
-	xl := ctl.xl
-	inMsg := m.(*msg.NatHoleResp)
-
-	// Dispatch the NatHoleResp message to the related proxy.
-	ok := ctl.msgTransporter.DispatchWithType(inMsg, msg.TypeNameNatHoleResp, inMsg.TransactionID)
-	if !ok {
-		xl.Tracef("dispatch NatHoleResp message to related proxy error")
-	}
-}
-
 func (ctl *Control) handlePong(m msg.Message) {
 	xl := ctl.xl
 	inMsg := m.(*msg.Pong)
@@ -226,7 +215,6 @@ func (ctl *Control) connectServer() (net.Conn, error) {
 func (ctl *Control) registerMsgHandlers() {
 	ctl.msgDispatcher.RegisterHandler(&msg.ReqWorkConn{}, msg.AsyncHandler(ctl.handleReqWorkConn))
 	ctl.msgDispatcher.RegisterHandler(&msg.NewProxyResp{}, ctl.handleNewProxyResp)
-	ctl.msgDispatcher.RegisterHandler(&msg.NatHoleResp{}, ctl.handleNatHoleResp)
 	ctl.msgDispatcher.RegisterHandler(&msg.Pong{}, ctl.handlePong)
 }
 

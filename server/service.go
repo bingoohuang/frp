@@ -35,7 +35,6 @@ import (
 	"github.com/fatedier/frp/pkg/auth"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/msg"
-	"github.com/fatedier/frp/pkg/nathole"
 	plugin "github.com/fatedier/frp/pkg/plugin/server"
 	"github.com/fatedier/frp/pkg/ssh"
 	"github.com/fatedier/frp/pkg/transport"
@@ -308,12 +307,6 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 		return int(data[0]) == netpkg.FRPTLSHeadByte || int(data[0]) == 0x16
 	})
 
-	// Create nat hole controller.
-	nc, err := nathole.NewController(time.Duration(cfg.NatHoleAnalysisDataReserveHours) * time.Hour)
-	if err != nil {
-		return nil, fmt.Errorf("create nat hole controller error, %v", err)
-	}
-	svr.rc.NatHoleController = nc
 	return svr, nil
 }
 
@@ -332,10 +325,6 @@ func (svr *Service) Run(ctx context.Context) {
 	}
 	go svr.HandleListener(svr.websocketListener, false)
 	go svr.HandleListener(svr.tlsListener, false)
-
-	if svr.rc.NatHoleController != nil {
-		go svr.rc.NatHoleController.CleanWorker(svr.ctx)
-	}
 
 	if svr.sshTunnelGateway != nil {
 		go svr.sshTunnelGateway.Run()

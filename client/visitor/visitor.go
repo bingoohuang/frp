@@ -64,12 +64,7 @@ func NewVisitor(
 			BaseVisitor: &baseVisitor,
 			cfg:         cfg,
 		}
-	case *v1.XTCPVisitorConfig:
-		visitor = &XTCPVisitor{
-			BaseVisitor:   &baseVisitor,
-			cfg:           cfg,
-			startTunnelCh: make(chan struct{}),
-		}
+
 	case *v1.SUDPVisitorConfig:
 		visitor = &SUDPVisitor{
 			BaseVisitor:  &baseVisitor,

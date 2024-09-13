@@ -85,8 +85,6 @@ type ServerConfig struct {
 	// UDPPacketSize specifies the UDP packet size
 	// By default, this value is 1500
 	UDPPacketSize int64 `json:"udpPacketSize,omitempty"`
-	// NatHoleAnalysisDataReserveHours specifies the hours to reserve nat hole analysis data.
-	NatHoleAnalysisDataReserveHours int64 `json:"natholeAnalysisDataReserveHours,omitempty"`
 
 	AllowPorts []types.PortsRange `json:"allowPorts,omitempty"`
 
@@ -109,7 +107,6 @@ func (c *ServerConfig) Complete() {
 	c.DetailedErrorsToClient = util.EmptyOr(c.DetailedErrorsToClient, lo.ToPtr(true))
 	c.UserConnTimeout = util.EmptyOr(c.UserConnTimeout, 10)
 	c.UDPPacketSize = util.EmptyOr(c.UDPPacketSize, 1500)
-	c.NatHoleAnalysisDataReserveHours = util.EmptyOr(c.NatHoleAnalysisDataReserveHours, 7*24)
 }
 
 type AuthServerConfig struct {

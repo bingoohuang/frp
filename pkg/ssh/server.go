@@ -31,7 +31,6 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/fatedier/frp/client/proxy"
-	"github.com/fatedier/frp/pkg/config"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/msg"
 	"github.com/fatedier/frp/pkg/util/log"
@@ -254,7 +253,6 @@ func (s *TunnelServer) parseClientAndProxyConfigurer(_ *tcpipForward, extraPaylo
 		Short: "ssh v0@{address} [command]",
 		Run:   func(*cobra.Command, []string) {},
 	}
-	cmd.SetGlobalNormalizationFunc(config.WordSepNormalizeFunc)
 
 	args := strings.Split(extraPayload, " ")
 	if len(args) < 1 {
@@ -269,10 +267,8 @@ func (s *TunnelServer) parseClientAndProxyConfigurer(_ *tcpipForward, extraPaylo
 	if pc == nil {
 		return nil, nil, helpMessage, fmt.Errorf("new proxy configurer error")
 	}
-	config.RegisterProxyFlags(cmd, pc, config.WithSSHMode())
 
 	clientCfg := v1.ClientCommonConfig{}
-	config.RegisterClientCommonConfigFlags(cmd, &clientCfg, config.WithSSHMode())
 
 	cmd.InitDefaultHelpCmd()
 	if err := cmd.ParseFlags(args); err != nil {

@@ -107,9 +107,9 @@ func ValidateProxyConfigurerForClient(c v1.ProxyConfigurer) error {
 
 	switch v := c.(type) {
 	case *v1.TCPProxyConfig:
-		return validateTCPProxyConfigForClient(v)
+		return nil
 	case *v1.UDPProxyConfig:
-		return validateUDPProxyConfigForClient(v)
+		return nil
 	case *v1.TCPMuxProxyConfig:
 		return validateTCPMuxProxyConfigForClient(v)
 	case *v1.HTTPProxyConfig:
@@ -117,21 +117,11 @@ func ValidateProxyConfigurerForClient(c v1.ProxyConfigurer) error {
 	case *v1.HTTPSProxyConfig:
 		return validateHTTPSProxyConfigForClient(v)
 	case *v1.STCPProxyConfig:
-		return validateSTCPProxyConfigForClient(v)
-	case *v1.XTCPProxyConfig:
-		return validateXTCPProxyConfigForClient(v)
+		return nil
 	case *v1.SUDPProxyConfig:
-		return validateSUDPProxyConfigForClient(v)
+		return nil
 	}
 	return errors.New("unknown proxy config type")
-}
-
-func validateTCPProxyConfigForClient(c *v1.TCPProxyConfig) error {
-	return nil
-}
-
-func validateUDPProxyConfigForClient(c *v1.UDPProxyConfig) error {
-	return nil
 }
 
 func validateTCPMuxProxyConfigForClient(c *v1.TCPMuxProxyConfig) error {
@@ -153,18 +143,6 @@ func validateHTTPSProxyConfigForClient(c *v1.HTTPSProxyConfig) error {
 	return validateDomainConfigForClient(&c.DomainConfig)
 }
 
-func validateSTCPProxyConfigForClient(c *v1.STCPProxyConfig) error {
-	return nil
-}
-
-func validateXTCPProxyConfigForClient(c *v1.XTCPProxyConfig) error {
-	return nil
-}
-
-func validateSUDPProxyConfigForClient(c *v1.SUDPProxyConfig) error {
-	return nil
-}
-
 func ValidateProxyConfigurerForServer(c v1.ProxyConfigurer, s *v1.ServerConfig) error {
 	base := c.GetBaseConfig()
 	if err := validateProxyBaseConfigForServer(base); err != nil {
@@ -183,11 +161,9 @@ func ValidateProxyConfigurerForServer(c v1.ProxyConfigurer, s *v1.ServerConfig) 
 	case *v1.HTTPSProxyConfig:
 		return validateHTTPSProxyConfigForServer(v, s)
 	case *v1.STCPProxyConfig:
-		return validateSTCPProxyConfigForServer(v, s)
-	case *v1.XTCPProxyConfig:
-		return validateXTCPProxyConfigForServer(v, s)
+		return nil
 	case *v1.SUDPProxyConfig:
-		return validateSUDPProxyConfigForServer(v, s)
+		return nil
 	default:
 		return errors.New("unknown proxy config type")
 	}
@@ -224,18 +200,6 @@ func validateHTTPSProxyConfigForServer(c *v1.HTTPSProxyConfig, s *v1.ServerConfi
 	}
 
 	return validateDomainConfigForServer(&c.DomainConfig, s)
-}
-
-func validateSTCPProxyConfigForServer(c *v1.STCPProxyConfig, s *v1.ServerConfig) error {
-	return nil
-}
-
-func validateXTCPProxyConfigForServer(c *v1.XTCPProxyConfig, s *v1.ServerConfig) error {
-	return nil
-}
-
-func validateSUDPProxyConfigForServer(c *v1.SUDPProxyConfig, s *v1.ServerConfig) error {
-	return nil
 }
 
 // ValidateAnnotations validates that a set of annotations are correctly defined.

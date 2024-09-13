@@ -12,56 +12,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sub
+package main
 
 import (
 	"context"
 	"fmt"
-	"io/fs"
-	"os"
+	"github.com/fatedier/frp/client"
+	"github.com/fatedier/frp/pkg/util/util"
 	"os/signal"
-	"path/filepath"
-	"sync"
 	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
+	"os"
 
-	"github.com/fatedier/frp/client"
+	"github.com/bingoohuang/ngg/ver"
 	"github.com/fatedier/frp/pkg/config"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/config/v1/validation"
 	"github.com/fatedier/frp/pkg/util/log"
-	"github.com/fatedier/frp/pkg/util/version"
+	"github.com/fatedier/frp/server"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 var (
-	cfgFile          string
-	cfgDir           string
-	showVersion      bool
-	strictConfigMode bool
+	cfgFile     string
+	showVersion bool
+
+	serverCfg v1.ServerConfig
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "./frpc.ini", "config file of frpc")
-	rootCmd.PersistentFlags().StringVarP(&cfgDir, "config_dir", "", "", "config directory, run one frpc service for each file in config directory")
-	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "v", false, "version of frpc")
-	rootCmd.PersistentFlags().BoolVarP(&strictConfigMode, "strict_config", "", true, "strict config parsing mode, unknown fields will cause an errors")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file of frp")
+	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "v", false, "version of frp")
+}
+
+type clientConfig struct {
+	ServerAddr string `json:"serverAddr,omitempty"`
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "frpc",
-	Short: "frpc is the client of frp (https://github.com/fatedier/frp)",
+	Use: "frp",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if showVersion {
-			fmt.Println(version.Full())
+			fmt.Println(ver.Version())
 			return nil
 		}
 
-		// If cfgDir is not empty, run multiple frpc service for each config file in cfgDir.
-		// Note that it's only designed for testing. It's not guaranteed to be stable.
-		if cfgDir != "" {
-			_ = runMultipleClients(cfgDir)
+		if cfgFile == "" {
+			cfgFile = "~/.frp.yaml"
+		}
+
+		var cc clientConfig
+		b, _ := os.ReadFile(util.ExpandFile(cfgFile))
+		_ = yaml.UnmarshalStrict(b, &cc)
+
+		if cc.ServerAddr == "" {
+			svrCfg, err := config.LoadServerConfig(cfgFile)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			svrCfg.Complete()
+			warning, err := validation.ValidateServerConfig(svrCfg)
+			if warning != nil {
+				fmt.Printf("WARNING: %v\n", warning)
+			}
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			if err := runServer(svrCfg); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 			return nil
 		}
 
@@ -72,35 +97,8 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		return nil
+
 	},
-}
-
-func runMultipleClients(cfgDir string) error {
-	var wg sync.WaitGroup
-	err := filepath.WalkDir(cfgDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		wg.Add(1)
-		time.Sleep(time.Millisecond)
-		go func() {
-			defer wg.Done()
-			err := runClient(path)
-			if err != nil {
-				fmt.Printf("frpc service error for config file [%s]\n", path)
-			}
-		}()
-		return nil
-	})
-	wg.Wait()
-	return err
-}
-
-func Execute() {
-	rootCmd.SetGlobalNormalizationFunc(config.WordSepNormalizeFunc)
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
 }
 
 func handleTermSignal(svr *client.Service) {
@@ -111,7 +109,7 @@ func handleTermSignal(svr *client.Service) {
 }
 
 func runClient(cfgFilePath string) error {
-	cfg, proxyCfgs, visitorCfgs, err := config.LoadClientConfig(cfgFilePath, strictConfigMode)
+	cfg, proxyCfgs, visitorCfgs, err := config.LoadClientConfig(cfgFilePath)
 	if err != nil {
 		return err
 	}
@@ -154,4 +152,28 @@ func startService(
 		go handleTermSignal(svr)
 	}
 	return svr.Run(context.Background())
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func runServer(cfg *v1.ServerConfig) (err error) {
+	log.InitLogger(cfg.Log.To, cfg.Log.Level, int(cfg.Log.MaxDays), cfg.Log.DisablePrintColor)
+
+	if cfgFile != "" {
+		log.Infof("frps uses config file: %s", cfgFile)
+	} else {
+		log.Infof("frps uses command line arguments for config")
+	}
+
+	svr, err := server.NewService(cfg)
+	if err != nil {
+		return err
+	}
+	log.Infof("frps started successfully")
+	svr.Run(context.Background())
+	return
 }

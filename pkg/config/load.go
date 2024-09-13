@@ -16,14 +16,12 @@ package config
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 
-	toml "github.com/pelletier/go-toml/v2"
 	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -82,42 +80,18 @@ func LoadFileContentWithTemplate(path string, values *Values) ([]byte, error) {
 	return RenderWithTemplate(b, values)
 }
 
-func LoadConfigureFromFile(path string, c any, strict bool) error {
+func LoadConfigureFromFile(path string, c any) error {
 	content, err := LoadFileContentWithTemplate(path, GetValues())
 	if err != nil {
 		return err
 	}
-	return LoadConfigure(content, c, strict)
+	return LoadConfigure(content, c)
 }
 
 // LoadConfigure loads configuration from bytes and unmarshal into c.
-// Now it supports json, yaml and toml format.
-func LoadConfigure(b []byte, c any, strict bool) error {
-	v1.DisallowUnknownFieldsMu.Lock()
-	defer v1.DisallowUnknownFieldsMu.Unlock()
-	v1.DisallowUnknownFields = strict
-
-	var tomlObj interface{}
-	// Try to unmarshal as TOML first; swallow errors from that (assume it's not valid TOML).
-	if err := toml.Unmarshal(b, &tomlObj); err == nil {
-		b, err = json.Marshal(&tomlObj)
-		if err != nil {
-			return err
-		}
-	}
-	// If the buffer smells like JSON (first non-whitespace character is '{'), unmarshal as JSON directly.
-	if yaml.IsJSONBuffer(b) {
-		decoder := json.NewDecoder(bytes.NewBuffer(b))
-		if strict {
-			decoder.DisallowUnknownFields()
-		}
-		return decoder.Decode(c)
-	}
-	// It wasn't JSON. Unmarshal as YAML.
-	if strict {
-		return yaml.UnmarshalStrict(b, c)
-	}
-	return yaml.Unmarshal(b, c)
+// Now it only supports yaml format.
+func LoadConfigure(b []byte, c any) error {
+	return yaml.UnmarshalStrict(b, c)
 }
 
 func NewProxyConfigurerFromMsg(m *msg.NewProxy, serverCfg *v1.ServerConfig) (v1.ProxyConfigurer, error) {
@@ -137,23 +111,17 @@ func NewProxyConfigurerFromMsg(m *msg.NewProxy, serverCfg *v1.ServerConfig) (v1.
 	return configurer, nil
 }
 
-func LoadServerConfig(path string, strict bool) (*v1.ServerConfig, error) {
-	var (
-		svrCfg *v1.ServerConfig
-	)
-
-	svrCfg = &v1.ServerConfig{}
-	if err := LoadConfigureFromFile(path, svrCfg, strict); err != nil {
+func LoadServerConfig(path string) (*v1.ServerConfig, error) {
+	svrCfg := &v1.ServerConfig{}
+	if err := LoadConfigureFromFile(path, svrCfg); err != nil {
 		return nil, err
 	}
 
-	if svrCfg != nil {
-		svrCfg.Complete()
-	}
+	svrCfg.Complete()
 	return svrCfg, nil
 }
 
-func LoadClientConfig(path string, strict bool) (
+func LoadClientConfig(path string) (
 	*v1.ClientCommonConfig,
 	[]v1.ProxyConfigurer,
 	[]v1.VisitorConfigurer,
@@ -166,7 +134,7 @@ func LoadClientConfig(path string, strict bool) (
 	)
 
 	allCfg := v1.ClientConfig{}
-	if err := LoadConfigureFromFile(path, &allCfg, strict); err != nil {
+	if err := LoadConfigureFromFile(path, &allCfg); err != nil {
 		return nil, nil, nil, err
 	}
 	cliCfg = &allCfg.ClientCommonConfig
@@ -180,7 +148,7 @@ func LoadClientConfig(path string, strict bool) (
 	// Load additional config from includes.
 	// legacy ini format already handle this in ParseClientConfig.
 	if len(cliCfg.IncludeConfigFiles) > 0 {
-		extProxyCfgs, extVisitorCfgs, err := LoadAdditionalClientConfigs(cliCfg.IncludeConfigFiles, strict)
+		extProxyCfgs, extVisitorCfgs, err := LoadAdditionalClientConfigs(cliCfg.IncludeConfigFiles)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -199,9 +167,8 @@ func LoadClientConfig(path string, strict bool) (
 		})
 	}
 
-	if cliCfg != nil {
-		cliCfg.Complete()
-	}
+	cliCfg.Complete()
+
 	for _, c := range proxyCfgs {
 		c.Complete(cliCfg.User)
 	}
@@ -211,7 +178,7 @@ func LoadClientConfig(path string, strict bool) (
 	return cliCfg, proxyCfgs, visitorCfgs, nil
 }
 
-func LoadAdditionalClientConfigs(paths []string, strict bool) ([]v1.ProxyConfigurer, []v1.VisitorConfigurer, error) {
+func LoadAdditionalClientConfigs(paths []string) ([]v1.ProxyConfigurer, []v1.VisitorConfigurer, error) {
 	proxyCfgs := make([]v1.ProxyConfigurer, 0)
 	visitorCfgs := make([]v1.VisitorConfigurer, 0)
 	for _, path := range paths {
@@ -234,7 +201,7 @@ func LoadAdditionalClientConfigs(paths []string, strict bool) ([]v1.ProxyConfigu
 			if matched, _ := filepath.Match(filepath.Join(absDir, filepath.Base(path)), absFile); matched {
 				// support yaml/json/toml
 				cfg := v1.ClientConfig{}
-				if err := LoadConfigureFromFile(absFile, &cfg, strict); err != nil {
+				if err := LoadConfigureFromFile(absFile, &cfg); err != nil {
 					return nil, nil, fmt.Errorf("load additional config from %s error: %v", absFile, err)
 				}
 				for _, c := range cfg.Proxies {

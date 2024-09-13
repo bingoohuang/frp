@@ -20,10 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-
-	"github.com/samber/lo"
-
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type VisitorTransport struct {
@@ -82,13 +78,11 @@ type VisitorType string
 
 const (
 	VisitorTypeSTCP VisitorType = "stcp"
-	VisitorTypeXTCP VisitorType = "xtcp"
 	VisitorTypeSUDP VisitorType = "sudp"
 )
 
 var visitorConfigTypeMap = map[VisitorType]reflect.Type{
 	VisitorTypeSTCP: reflect.TypeOf(STCPVisitorConfig{}),
-	VisitorTypeXTCP: reflect.TypeOf(XTCPVisitorConfig{}),
 	VisitorTypeSUDP: reflect.TypeOf(SUDPVisitorConfig{}),
 }
 
@@ -119,9 +113,8 @@ func (c *TypedVisitorConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unknown visitor type: %s", typeStruct.Type)
 	}
 	decoder := json.NewDecoder(bytes.NewBuffer(b))
-	if DisallowUnknownFields {
-		decoder.DisallowUnknownFields()
-	}
+	decoder.DisallowUnknownFields()
+
 	if err := decoder.Decode(configurer); err != nil {
 		return fmt.Errorf("unmarshal VisitorConfig error: %v", err)
 	}
@@ -153,30 +146,4 @@ var _ VisitorConfigurer = &SUDPVisitorConfig{}
 
 type SUDPVisitorConfig struct {
 	VisitorBaseConfig
-}
-
-var _ VisitorConfigurer = &XTCPVisitorConfig{}
-
-type XTCPVisitorConfig struct {
-	VisitorBaseConfig
-
-	Protocol          string `json:"protocol,omitempty"`
-	KeepTunnelOpen    bool   `json:"keepTunnelOpen,omitempty"`
-	MaxRetriesAnHour  int    `json:"maxRetriesAnHour,omitempty"`
-	MinRetryInterval  int    `json:"minRetryInterval,omitempty"`
-	FallbackTo        string `json:"fallbackTo,omitempty"`
-	FallbackTimeoutMs int    `json:"fallbackTimeoutMs,omitempty"`
-}
-
-func (c *XTCPVisitorConfig) Complete(g *ClientCommonConfig) {
-	c.VisitorBaseConfig.Complete(g)
-
-	c.Protocol = util.EmptyOr(c.Protocol, "quic")
-	c.MaxRetriesAnHour = util.EmptyOr(c.MaxRetriesAnHour, 8)
-	c.MinRetryInterval = util.EmptyOr(c.MinRetryInterval, 90)
-	c.FallbackTimeoutMs = util.EmptyOr(c.FallbackTimeoutMs, 1000)
-
-	if c.FallbackTo != "" {
-		c.FallbackTo = lo.Ternary(g.User == "", "", g.User+".") + c.FallbackTo
-	}
 }

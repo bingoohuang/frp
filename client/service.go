@@ -24,9 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fatedier/golib/crypto"
-	"github.com/samber/lo"
-
+	"github.com/bingoohuang/ngg/ss"
 	"github.com/fatedier/frp/client/proxy"
 	"github.com/fatedier/frp/pkg/auth"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
@@ -35,6 +33,8 @@ import (
 	"github.com/fatedier/frp/pkg/util/version"
 	"github.com/fatedier/frp/pkg/util/wait"
 	"github.com/fatedier/frp/pkg/util/xlog"
+	"github.com/fatedier/golib/crypto"
+	"github.com/samber/lo"
 )
 
 func init() {
@@ -223,6 +223,7 @@ func (svr *Service) login() (conn net.Conn, connector Connector, err error) {
 	loginMsg := &msg.Login{
 		Arch:      runtime.GOARCH,
 		Os:        runtime.GOOS,
+		Hostname:  ss.Pick1(os.Hostname()),
 		PoolCount: svr.common.Transport.PoolCount,
 		User:      svr.common.User,
 		Version:   version.Full(),

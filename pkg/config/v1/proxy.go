@@ -193,9 +193,7 @@ func (c *TypedProxyConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unknown proxy type: %s", typeStruct.Type)
 	}
 	decoder := json.NewDecoder(bytes.NewBuffer(b))
-	if DisallowUnknownFields {
-		decoder.DisallowUnknownFields()
-	}
+	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(configurer); err != nil {
 		return fmt.Errorf("unmarshal ProxyConfig error: %v", err)
 	}
@@ -227,7 +225,6 @@ const (
 	ProxyTypeHTTP   ProxyType = "http"
 	ProxyTypeHTTPS  ProxyType = "https"
 	ProxyTypeSTCP   ProxyType = "stcp"
-	ProxyTypeXTCP   ProxyType = "xtcp"
 	ProxyTypeSUDP   ProxyType = "sudp"
 )
 
@@ -238,7 +235,6 @@ var proxyConfigTypeMap = map[ProxyType]reflect.Type{
 	ProxyTypeHTTPS:  reflect.TypeOf(HTTPSProxyConfig{}),
 	ProxyTypeTCPMUX: reflect.TypeOf(TCPMuxProxyConfig{}),
 	ProxyTypeSTCP:   reflect.TypeOf(STCPProxyConfig{}),
-	ProxyTypeXTCP:   reflect.TypeOf(XTCPProxyConfig{}),
 	ProxyTypeSUDP:   reflect.TypeOf(SUDPProxyConfig{}),
 }
 
@@ -413,29 +409,6 @@ func (c *STCPProxyConfig) MarshalToMsg(m *msg.NewProxy) {
 }
 
 func (c *STCPProxyConfig) UnmarshalFromMsg(m *msg.NewProxy) {
-	c.ProxyBaseConfig.UnmarshalFromMsg(m)
-
-	c.Secretkey = m.Sk
-	c.AllowUsers = m.AllowUsers
-}
-
-var _ ProxyConfigurer = &XTCPProxyConfig{}
-
-type XTCPProxyConfig struct {
-	ProxyBaseConfig
-
-	Secretkey  string   `json:"secretKey,omitempty"`
-	AllowUsers []string `json:"allowUsers,omitempty"`
-}
-
-func (c *XTCPProxyConfig) MarshalToMsg(m *msg.NewProxy) {
-	c.ProxyBaseConfig.MarshalToMsg(m)
-
-	m.Sk = c.Secretkey
-	m.AllowUsers = c.AllowUsers
-}
-
-func (c *XTCPProxyConfig) UnmarshalFromMsg(m *msg.NewProxy) {
 	c.ProxyBaseConfig.UnmarshalFromMsg(m)
 
 	c.Secretkey = m.Sk

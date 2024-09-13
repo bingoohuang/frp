@@ -44,8 +44,6 @@ type ClientCommonConfig struct {
 	// ServerPort specifies the port to connect to the server on. By default,
 	// this value is 7000.
 	ServerPort int `json:"serverPort,omitempty"`
-	// STUN server to help penetrate NAT hole.
-	NatHoleSTUNServer string `json:"natHoleStunServer,omitempty"`
 	// DNSServer specifies a DNS server address for FRPC to use. If this value
 	// is "", the default DNS will be used.
 	DNSServer string `json:"dnsServer,omitempty"`
@@ -75,7 +73,6 @@ func (c *ClientCommonConfig) Complete() {
 	c.ServerAddr = util.EmptyOr(c.ServerAddr, "0.0.0.0")
 	c.ServerPort = util.EmptyOr(c.ServerPort, 7000)
 	c.LoginFailExit = util.EmptyOr(c.LoginFailExit, lo.ToPtr(true))
-	c.NatHoleSTUNServer = util.EmptyOr(c.NatHoleSTUNServer, "stun.easyvoip.com:3478")
 
 	c.Auth.Complete()
 	c.Log.Complete()
@@ -177,28 +174,9 @@ type AuthClientConfig struct {
 	// Token specifies the authorization token used to create keys to be sent
 	// to the server. The server must have a matching token for authorization
 	// to succeed.  By default, this value is "".
-	Token string               `json:"token,omitempty"`
-	OIDC  AuthOIDCClientConfig `json:"oidc,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 func (c *AuthClientConfig) Complete() {
 	c.Method = util.EmptyOr(c.Method, "token")
-}
-
-type AuthOIDCClientConfig struct {
-	// ClientID specifies the client ID to use to get a token in OIDC authentication.
-	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret specifies the client secret to use to get a token in OIDC
-	// authentication.
-	ClientSecret string `json:"clientSecret,omitempty"`
-	// Audience specifies the audience of the token in OIDC authentication.
-	Audience string `json:"audience,omitempty"`
-	// Scope specifies the scope of the token in OIDC authentication.
-	Scope string `json:"scope,omitempty"`
-	// TokenEndpointURL specifies the URL which implements OIDC Token Endpoint.
-	// It will be used to get an OIDC token.
-	TokenEndpointURL string `json:"tokenEndpointURL,omitempty"`
-	// AdditionalEndpointParams specifies additional parameters to be sent
-	// this field will be transfer to map[string][]string in OIDC token generator.
-	AdditionalEndpointParams map[string]string `json:"additionalEndpointParams,omitempty"`
 }
