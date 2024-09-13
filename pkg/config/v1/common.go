@@ -15,6 +15,8 @@
 package v1
 
 import (
+	"cmp"
+
 	"github.com/fatedier/frp/pkg/util/util"
 )
 
@@ -39,9 +41,9 @@ type QUICOptions struct {
 }
 
 func (c *QUICOptions) Complete() {
-	c.KeepalivePeriod = util.EmptyOr(c.KeepalivePeriod, 10)
-	c.MaxIdleTimeout = util.EmptyOr(c.MaxIdleTimeout, 30)
-	c.MaxIncomingStreams = util.EmptyOr(c.MaxIncomingStreams, 100000)
+	c.KeepalivePeriod = cmp.Or(c.KeepalivePeriod, 10)
+	c.MaxIdleTimeout = cmp.Or(c.MaxIdleTimeout, 30)
+	c.MaxIncomingStreams = cmp.Or(c.MaxIncomingStreams, 100000)
 }
 
 type TLSConfig struct {
@@ -73,9 +75,9 @@ type LogConfig struct {
 }
 
 func (c *LogConfig) Complete() {
-	c.To = util.EmptyOr(util.ExpandFile(c.To), "console")
-	c.Level = util.EmptyOr(c.Level, "info")
-	c.MaxDays = util.EmptyOr(c.MaxDays, 3)
+	c.To = cmp.Or(util.ExpandFile(c.To), "console")
+	c.Level = cmp.Or(c.Level, "info")
+	c.MaxDays = cmp.Or(c.MaxDays, 3)
 }
 
 type HTTPPluginOptions struct {

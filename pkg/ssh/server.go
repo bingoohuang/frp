@@ -15,6 +15,7 @@
 package ssh
 
 import (
+	"cmp"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -106,7 +107,7 @@ func (s *TunnelServer) Run() error {
 	}
 	clientCfg.Complete()
 	if sshConn.Permissions != nil {
-		clientCfg.User = util.EmptyOr(sshConn.Permissions.Extensions["user"], clientCfg.User)
+		clientCfg.User = cmp.Or(sshConn.Permissions.Extensions["user"], clientCfg.User)
 	}
 	pc.Complete(clientCfg.User)
 

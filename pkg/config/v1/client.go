@@ -15,11 +15,10 @@
 package v1
 
 import (
+	"cmp"
 	"os"
 
 	"github.com/samber/lo"
-
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type ClientConfig struct {
@@ -70,15 +69,15 @@ type ClientCommonConfig struct {
 }
 
 func (c *ClientCommonConfig) Complete() {
-	c.ServerAddr = util.EmptyOr(c.ServerAddr, "0.0.0.0")
-	c.ServerPort = util.EmptyOr(c.ServerPort, 7000)
-	c.LoginFailExit = util.EmptyOr(c.LoginFailExit, lo.ToPtr(true))
+	c.ServerAddr = cmp.Or(c.ServerAddr, "0.0.0.0")
+	c.ServerPort = cmp.Or(c.ServerPort, 7000)
+	c.LoginFailExit = cmp.Or(c.LoginFailExit, lo.ToPtr(true))
 
 	c.Auth.Complete()
 	c.Log.Complete()
 	c.Transport.Complete()
 
-	c.UDPPacketSize = util.EmptyOr(c.UDPPacketSize, 1500)
+	c.UDPPacketSize = cmp.Or(c.UDPPacketSize, 1500)
 }
 
 type ClientTransportConfig struct {
@@ -124,20 +123,20 @@ type ClientTransportConfig struct {
 }
 
 func (c *ClientTransportConfig) Complete() {
-	c.Protocol = util.EmptyOr(c.Protocol, "tcp")
-	c.DialServerTimeout = util.EmptyOr(c.DialServerTimeout, 10)
-	c.DialServerKeepAlive = util.EmptyOr(c.DialServerKeepAlive, 7200)
-	c.ProxyURL = util.EmptyOr(c.ProxyURL, os.Getenv("http_proxy"))
-	c.PoolCount = util.EmptyOr(c.PoolCount, 1)
-	c.TCPMux = util.EmptyOr(c.TCPMux, lo.ToPtr(true))
-	c.TCPMuxKeepaliveInterval = util.EmptyOr(c.TCPMuxKeepaliveInterval, 30)
+	c.Protocol = cmp.Or(c.Protocol, "tcp")
+	c.DialServerTimeout = cmp.Or(c.DialServerTimeout, 10)
+	c.DialServerKeepAlive = cmp.Or(c.DialServerKeepAlive, 7200)
+	c.ProxyURL = cmp.Or(c.ProxyURL, os.Getenv("http_proxy"))
+	c.PoolCount = cmp.Or(c.PoolCount, 1)
+	c.TCPMux = cmp.Or(c.TCPMux, lo.ToPtr(true))
+	c.TCPMuxKeepaliveInterval = cmp.Or(c.TCPMuxKeepaliveInterval, 30)
 	if lo.FromPtr(c.TCPMux) {
 		// If TCPMux is enabled, heartbeat of application layer is unnecessary because we can rely on heartbeat in tcpmux.
-		c.HeartbeatInterval = util.EmptyOr(c.HeartbeatInterval, -1)
-		c.HeartbeatTimeout = util.EmptyOr(c.HeartbeatTimeout, -1)
+		c.HeartbeatInterval = cmp.Or(c.HeartbeatInterval, -1)
+		c.HeartbeatTimeout = cmp.Or(c.HeartbeatTimeout, -1)
 	} else {
-		c.HeartbeatInterval = util.EmptyOr(c.HeartbeatInterval, 30)
-		c.HeartbeatTimeout = util.EmptyOr(c.HeartbeatTimeout, 90)
+		c.HeartbeatInterval = cmp.Or(c.HeartbeatInterval, 30)
+		c.HeartbeatTimeout = cmp.Or(c.HeartbeatTimeout, 90)
 	}
 	c.QUIC.Complete()
 	c.TLS.Complete()
@@ -158,8 +157,8 @@ type TLSClientConfig struct {
 }
 
 func (c *TLSClientConfig) Complete() {
-	c.Enable = util.EmptyOr(c.Enable, lo.ToPtr(true))
-	c.DisableCustomTLSFirstByte = util.EmptyOr(c.DisableCustomTLSFirstByte, lo.ToPtr(true))
+	c.Enable = cmp.Or(c.Enable, lo.ToPtr(true))
+	c.DisableCustomTLSFirstByte = cmp.Or(c.DisableCustomTLSFirstByte, lo.ToPtr(true))
 }
 
 type AuthClientConfig struct {
@@ -178,5 +177,5 @@ type AuthClientConfig struct {
 }
 
 func (c *AuthClientConfig) Complete() {
-	c.Method = util.EmptyOr(c.Method, "token")
+	c.Method = cmp.Or(c.Method, "token")
 }

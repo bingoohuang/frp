@@ -16,6 +16,7 @@ package v1
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,7 +26,6 @@ import (
 
 	"github.com/fatedier/frp/pkg/config/types"
 	"github.com/fatedier/frp/pkg/msg"
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type ProxyTransport struct {
@@ -125,8 +125,8 @@ func (c *ProxyBaseConfig) GetBaseConfig() *ProxyBaseConfig {
 
 func (c *ProxyBaseConfig) Complete(namePrefix string) {
 	c.Name = lo.Ternary(namePrefix == "", "", namePrefix+".") + c.Name
-	c.LocalIP = util.EmptyOr(c.LocalIP, "127.0.0.1")
-	c.Transport.BandwidthLimitMode = util.EmptyOr(c.Transport.BandwidthLimitMode, types.BandwidthLimitModeClient)
+	c.LocalIP = cmp.Or(c.LocalIP, "127.0.0.1")
+	c.Transport.BandwidthLimitMode = cmp.Or(c.Transport.BandwidthLimitMode, types.BandwidthLimitModeClient)
 
 	if c.Plugin.ClientPluginOptions != nil {
 		c.Plugin.ClientPluginOptions.Complete()

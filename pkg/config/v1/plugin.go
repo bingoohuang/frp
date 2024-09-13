@@ -16,14 +16,13 @@ package v1
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/samber/lo"
-
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type ClientPluginOptions interface {
@@ -124,7 +123,7 @@ type HTTPS2HTTPPluginOptions struct {
 }
 
 func (o *HTTPS2HTTPPluginOptions) Complete() {
-	o.EnableHTTP2 = util.EmptyOr(o.EnableHTTP2, lo.ToPtr(true))
+	o.EnableHTTP2 = cmp.Or(o.EnableHTTP2, lo.ToPtr(true))
 }
 
 type HTTPS2HTTPSPluginOptions struct {
@@ -138,7 +137,7 @@ type HTTPS2HTTPSPluginOptions struct {
 }
 
 func (o *HTTPS2HTTPSPluginOptions) Complete() {
-	o.EnableHTTP2 = util.EmptyOr(o.EnableHTTP2, lo.ToPtr(true))
+	o.EnableHTTP2 = cmp.Or(o.EnableHTTP2, lo.ToPtr(true))
 }
 
 type HTTP2HTTPPluginOptions struct {

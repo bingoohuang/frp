@@ -16,6 +16,7 @@ package config
 
 import (
 	"bytes"
+	"cmp"
 	"fmt"
 	"html/template"
 	"os"
@@ -95,7 +96,7 @@ func LoadConfigure(b []byte, c any) error {
 }
 
 func NewProxyConfigurerFromMsg(m *msg.NewProxy, serverCfg *v1.ServerConfig) (v1.ProxyConfigurer, error) {
-	m.ProxyType = util.EmptyOr(m.ProxyType, string(v1.ProxyTypeTCP))
+	m.ProxyType = cmp.Or(m.ProxyType, string(v1.ProxyTypeTCP))
 
 	configurer := v1.NewProxyConfigurerByType(v1.ProxyType(m.ProxyType))
 	if configurer == nil {

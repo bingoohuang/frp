@@ -15,10 +15,11 @@
 package v1
 
 import (
+	"cmp"
+
 	"github.com/samber/lo"
 
 	"github.com/fatedier/frp/pkg/config/types"
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type ServerConfig struct {
@@ -97,16 +98,16 @@ func (c *ServerConfig) Complete() {
 	c.Transport.Complete()
 	c.SSHTunnelGateway.Complete()
 
-	c.BindAddr = util.EmptyOr(c.BindAddr, "0.0.0.0")
-	c.BindPort = util.EmptyOr(c.BindPort, 7000)
+	c.BindAddr = cmp.Or(c.BindAddr, "0.0.0.0")
+	c.BindPort = cmp.Or(c.BindPort, 7000)
 	if c.ProxyBindAddr == "" {
 		c.ProxyBindAddr = c.BindAddr
 	}
 
-	c.VhostHTTPTimeout = util.EmptyOr(c.VhostHTTPTimeout, 60)
-	c.DetailedErrorsToClient = util.EmptyOr(c.DetailedErrorsToClient, lo.ToPtr(true))
-	c.UserConnTimeout = util.EmptyOr(c.UserConnTimeout, 10)
-	c.UDPPacketSize = util.EmptyOr(c.UDPPacketSize, 1500)
+	c.VhostHTTPTimeout = cmp.Or(c.VhostHTTPTimeout, 60)
+	c.DetailedErrorsToClient = cmp.Or(c.DetailedErrorsToClient, lo.ToPtr(true))
+	c.UserConnTimeout = cmp.Or(c.UserConnTimeout, 10)
+	c.UDPPacketSize = cmp.Or(c.UDPPacketSize, 1500)
 }
 
 type AuthServerConfig struct {
@@ -117,7 +118,7 @@ type AuthServerConfig struct {
 }
 
 func (c *AuthServerConfig) Complete() {
-	c.Method = util.EmptyOr(c.Method, "token")
+	c.Method = cmp.Or(c.Method, "token")
 }
 
 type AuthOIDCServerConfig struct {
@@ -162,15 +163,15 @@ type ServerTransportConfig struct {
 }
 
 func (c *ServerTransportConfig) Complete() {
-	c.TCPMux = util.EmptyOr(c.TCPMux, lo.ToPtr(true))
-	c.TCPMuxKeepaliveInterval = util.EmptyOr(c.TCPMuxKeepaliveInterval, 30)
-	c.TCPKeepAlive = util.EmptyOr(c.TCPKeepAlive, 7200)
-	c.MaxPoolCount = util.EmptyOr(c.MaxPoolCount, 5)
+	c.TCPMux = cmp.Or(c.TCPMux, lo.ToPtr(true))
+	c.TCPMuxKeepaliveInterval = cmp.Or(c.TCPMuxKeepaliveInterval, 30)
+	c.TCPKeepAlive = cmp.Or(c.TCPKeepAlive, 7200)
+	c.MaxPoolCount = cmp.Or(c.MaxPoolCount, 5)
 	if lo.FromPtr(c.TCPMux) {
 		// If TCPMux is enabled, heartbeat of application layer is unnecessary because we can rely on heartbeat in tcpmux.
-		c.HeartbeatTimeout = util.EmptyOr(c.HeartbeatTimeout, -1)
+		c.HeartbeatTimeout = cmp.Or(c.HeartbeatTimeout, -1)
 	} else {
-		c.HeartbeatTimeout = util.EmptyOr(c.HeartbeatTimeout, 90)
+		c.HeartbeatTimeout = cmp.Or(c.HeartbeatTimeout, 90)
 	}
 	c.QUIC.Complete()
 	if c.TLS.TrustedCaFile != "" {
@@ -193,5 +194,5 @@ type SSHTunnelGateway struct {
 }
 
 func (c *SSHTunnelGateway) Complete() {
-	c.AutoGenPrivateKeyPath = util.EmptyOr(c.AutoGenPrivateKeyPath, "./.autogen_ssh_key")
+	c.AutoGenPrivateKeyPath = cmp.Or(c.AutoGenPrivateKeyPath, "./.autogen_ssh_key")
 }

@@ -15,10 +15,9 @@
 package wait
 
 import (
+	"cmp"
 	"math/rand/v2"
 	"time"
-
-	"github.com/fatedier/frp/pkg/util/util"
 )
 
 type BackoffFunc func(previousDuration time.Duration, previousConditionError bool) time.Duration
@@ -92,12 +91,12 @@ func (f *fastBackoffImpl) Backoff(previousDuration time.Duration, previousCondit
 	if previousConditionError {
 		var duration time.Duration
 		if f.consecutiveErrCount == 1 {
-			duration = util.EmptyOr(f.options.InitDurationIfFail, previousDuration)
+			duration = cmp.Or(f.options.InitDurationIfFail, previousDuration)
 		} else {
 			duration = previousDuration
 		}
 
-		duration = util.EmptyOr(duration, time.Second)
+		duration = cmp.Or(duration, time.Second)
 		if f.options.Factor != 0 {
 			duration = time.Duration(float64(duration) * f.options.Factor)
 		}

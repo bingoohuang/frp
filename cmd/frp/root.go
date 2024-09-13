@@ -17,29 +17,33 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/fatedier/frp/client"
-	"github.com/fatedier/frp/pkg/util/util"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"os"
-
+	"github.com/bingoohuang/ngg/ss"
 	"github.com/bingoohuang/ngg/ver"
+	"github.com/fatedier/frp/client"
 	"github.com/fatedier/frp/pkg/config"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/config/v1/validation"
 	"github.com/fatedier/frp/pkg/util/log"
+	"github.com/fatedier/frp/pkg/util/system"
+	"github.com/fatedier/frp/pkg/util/util"
 	"github.com/fatedier/frp/server"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
+func main() {
+	system.EnableCompatibilityMode()
+	Execute()
+}
+
 var (
 	cfgFile     string
 	showVersion bool
-
-	serverCfg v1.ServerConfig
 )
 
 func init() {
@@ -64,9 +68,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		var cc clientConfig
-		b, _ := os.ReadFile(util.ExpandFile(cfgFile))
-		_ = yaml.UnmarshalStrict(b, &cc)
-
+		_ = yaml.UnmarshalStrict(ss.Pick1(os.ReadFile(util.ExpandFile(cfgFile))), &cc)
 		if cc.ServerAddr == "" {
 			svrCfg, err := config.LoadServerConfig(cfgFile)
 			if err != nil {
