@@ -110,13 +110,11 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 	}
 
 	var newVisitorConnRespMsg msg.NewVisitorConnResp
-	_ = visitorConn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	err = msg.ReadMsgInto(visitorConn, &newVisitorConnRespMsg)
+	err = msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second)
 	if err != nil {
 		xl.Warnf("get newVisitorConnRespMsg error: %v", err)
 		return
 	}
-	_ = visitorConn.SetReadDeadline(time.Time{})
 
 	if newVisitorConnRespMsg.Error != "" {
 		xl.Warnf("start new visitor connection error: %s", newVisitorConnRespMsg.Error)

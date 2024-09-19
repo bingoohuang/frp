@@ -386,13 +386,11 @@ func (svr *Service) handleConnection(ctx context.Context, conn net.Conn, interna
 		err    error
 	)
 
-	_ = conn.SetReadDeadline(time.Now().Add(connReadTimeout))
-	if rawMsg, err = msg.ReadMsg(conn); err != nil {
+	if rawMsg, err = msg.ReadMsgTimeout(conn, connReadTimeout); err != nil {
 		log.Tracef("Failed to read message: %v", err)
 		conn.Close()
 		return
 	}
-	_ = conn.SetReadDeadline(time.Time{})
 
 	switch m := rawMsg.(type) {
 	case *msg.Login:

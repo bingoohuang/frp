@@ -16,6 +16,8 @@ package msg
 
 import (
 	"io"
+	"net"
+	"time"
 
 	jsonMsg "github.com/fatedier/golib/msg/json"
 )
@@ -31,8 +33,24 @@ func init() {
 	}
 }
 
+func ReadMsgTimeout(conn net.Conn, timeout time.Duration) (msg Message, err error) {
+	_ = conn.SetReadDeadline(time.Now().Add(timeout))
+	msg, err = ReadMsg(conn)
+	_ = conn.SetReadDeadline(time.Time{})
+	return
+}
+
 func ReadMsg(c io.Reader) (msg Message, err error) {
 	return msgCtl.ReadMsg(c)
+}
+
+func ReadMsgIntoTimeout(conn net.Conn, msg Message, timeout time.Duration) error {
+	_ = conn.SetReadDeadline(time.Now().Add(timeout))
+	if err := ReadMsgInto(conn, msg); err != nil {
+		return err
+	}
+	_ = conn.SetReadDeadline(time.Time{})
+	return nil
 }
 
 func ReadMsgInto(c io.Reader, msg Message) (err error) {

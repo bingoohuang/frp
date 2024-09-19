@@ -116,8 +116,7 @@ func (pxy *UDPProxy) Run() (remoteAddr string, err error) {
 			)
 			xl.Tracef("loop waiting message from udp workConn")
 			// client will send heartbeat in workConn for keeping alive
-			_ = conn.SetReadDeadline(time.Now().Add(time.Duration(60) * time.Second))
-			if rawMsg, errRet = msg.ReadMsg(conn); errRet != nil {
+			if rawMsg, errRet = msg.ReadMsgTimeout(conn, 60*time.Second); errRet != nil {
 				xl.Warnf("read from workConn for udp error: %v", errRet)
 				_ = conn.Close()
 				// notify proxy to start a new work connection
@@ -127,9 +126,7 @@ func (pxy *UDPProxy) Run() (remoteAddr string, err error) {
 				})
 				return
 			}
-			if err := conn.SetReadDeadline(time.Time{}); err != nil {
-				xl.Warnf("set read deadline error: %v", err)
-			}
+
 			switch m := rawMsg.(type) {
 			case *msg.Ping:
 				xl.Tracef("udp work conn get ping message")

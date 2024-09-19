@@ -86,7 +86,7 @@ func (vm *Manager) keepVisitorsRunning() {
 			for _, cfg := range vm.cfgs {
 				name := cfg.GetBaseConfig().Name
 				if _, exist := vm.visitors[name]; !exist {
-					xl.Infof("try to start visitor [%s]", name)
+					xl.Infof("try to start visitor [%s]...", name)
 					_ = vm.startVisitor(cfg)
 				}
 			}
@@ -109,18 +109,18 @@ func (vm *Manager) Close() {
 }
 
 // Hold lock before calling this function.
-func (vm *Manager) startVisitor(cfg v1.VisitorConfigurer) (err error) {
+func (vm *Manager) startVisitor(cfg v1.VisitorConfigurer) error {
 	xl := xlog.FromContextSafe(vm.ctx)
 	name := cfg.GetBaseConfig().Name
 	visitor := NewVisitor(vm.ctx, cfg, vm.clientCfg, vm.helper)
-	err = visitor.Run()
-	if err != nil {
-		xl.Warnf("start error: %v", err)
-	} else {
-		vm.visitors[name] = visitor
-		xl.Infof("start visitor success")
+	if err := visitor.Run(); err != nil {
+		xl.Warnf("start visitor %s error: %v", name, err)
+		return err
 	}
-	return
+
+	vm.visitors[name] = visitor
+	xl.Infof("start visitor %s successfully", name)
+	return nil
 }
 
 func (vm *Manager) UpdateAll(cfgs []v1.VisitorConfigurer) {
@@ -159,17 +159,12 @@ func (vm *Manager) UpdateAll(cfgs []v1.VisitorConfigurer) {
 		xl.Infof("visitor removed: %v", delNames)
 	}
 
-	addNames := make([]string, 0)
 	for _, cfg := range cfgs {
 		name := cfg.GetBaseConfig().Name
 		if _, ok := vm.cfgs[name]; !ok {
 			vm.cfgs[name] = cfg
-			addNames = append(addNames, name)
 			_ = vm.startVisitor(cfg)
 		}
-	}
-	if len(addNames) > 0 {
-		xl.Infof("visitor added: %v", addNames)
 	}
 }
 

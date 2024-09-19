@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/bingoohuang/ngg/ss"
 )
 
 type VisitorTransport struct {
@@ -62,11 +64,7 @@ func (c *VisitorBaseConfig) Complete(g *ClientCommonConfig) {
 		c.ServerName = namePrefix + c.ServerName
 	}
 
-	if c.Name == "" {
-		c.Name = c.ServerName + "-visitor"
-	}
-
-	c.Name = namePrefix + c.Name
+	c.Name = namePrefix + ss.Or(c.Name, c.ServerName)
 }
 
 type VisitorConfigurer interface {

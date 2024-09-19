@@ -132,25 +132,11 @@ func (c *FakeUDPConn) IsClosed() bool {
 	return c.closeFlag
 }
 
-func (c *FakeUDPConn) LocalAddr() net.Addr {
-	return c.localAddr
-}
-
-func (c *FakeUDPConn) RemoteAddr() net.Addr {
-	return c.remoteAddr
-}
-
-func (c *FakeUDPConn) SetDeadline(_ time.Time) error {
-	return nil
-}
-
-func (c *FakeUDPConn) SetReadDeadline(_ time.Time) error {
-	return nil
-}
-
-func (c *FakeUDPConn) SetWriteDeadline(_ time.Time) error {
-	return nil
-}
+func (c *FakeUDPConn) LocalAddr() net.Addr                { return c.localAddr }
+func (c *FakeUDPConn) RemoteAddr() net.Addr               { return c.remoteAddr }
+func (c *FakeUDPConn) SetDeadline(_ time.Time) error      { return nil }
+func (c *FakeUDPConn) SetReadDeadline(_ time.Time) error  { return nil }
+func (c *FakeUDPConn) SetWriteDeadline(_ time.Time) error { return nil }
 
 type UDPListener struct {
 	addr      net.Addr

@@ -132,13 +132,11 @@ func (sv *SUDPVisitor) worker(workConn net.Conn, firstPacket *msg.UDPPacket) {
 			)
 
 			// frpc will send heartbeat in workConn to frpc visitor for keeping alive
-			_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-			if rawMsg, errRet = msg.ReadMsg(conn); errRet != nil {
+			if rawMsg, errRet = msg.ReadMsgTimeout(conn, 60*time.Second); errRet != nil {
 				xl.Warnf("read from workconn for user udp conn error: %v", errRet)
 				return
 			}
 
-			_ = conn.SetReadDeadline(time.Time{})
 			switch m := rawMsg.(type) {
 			case *msg.Ping:
 				xl.Debugf("frpc visitor get ping message from frpc")
@@ -219,12 +217,10 @@ func (sv *SUDPVisitor) getNewVisitorConn() (net.Conn, error) {
 	}
 
 	var newVisitorConnRespMsg msg.NewVisitorConnResp
-	_ = visitorConn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	err = msg.ReadMsgInto(visitorConn, &newVisitorConnRespMsg)
+	err = msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("frpc read newVisitorConnRespMsg error: %v", err)
 	}
-	_ = visitorConn.SetReadDeadline(time.Time{})
 
 	if newVisitorConnRespMsg.Error != "" {
 		return nil, fmt.Errorf("start new visitor connection error: %s", newVisitorConnRespMsg.Error)

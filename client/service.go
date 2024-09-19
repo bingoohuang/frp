@@ -245,11 +245,9 @@ func (svr *Service) login() (conn net.Conn, connector Connector, err error) {
 	}
 
 	var loginRespMsg msg.LoginResp
-	_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	if err = msg.ReadMsgInto(conn, &loginRespMsg); err != nil {
+	if err = msg.ReadMsgIntoTimeout(conn, &loginRespMsg, 10*time.Second); err != nil {
 		return
 	}
-	_ = conn.SetReadDeadline(time.Time{})
 
 	if loginRespMsg.Error != "" {
 		err = fmt.Errorf("%s", loginRespMsg.Error)
@@ -260,7 +258,7 @@ func (svr *Service) login() (conn net.Conn, connector Connector, err error) {
 	svr.runID = loginRespMsg.RunID
 	xl.AddPrefix(xlog.LogPrefix{Name: "runID", Value: svr.runID})
 
-	xl.Infof("login to server success, get run id [%s]", loginRespMsg.RunID)
+	xl.Infof("login to server success, got run id [%s]", loginRespMsg.RunID)
 	return
 }
 
