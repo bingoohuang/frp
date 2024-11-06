@@ -222,7 +222,8 @@ func (ctl *Control) registerMsgHandlers() {
 func (ctl *Control) heartbeatWorker() {
 	xl := ctl.xl
 
-	if ctl.sessionCtx.Common.Transport.HeartbeatInterval > 0 {
+	heartbeatInterval := ctl.sessionCtx.Common.Transport.HeartbeatInterval
+	if heartbeatInterval > 0 {
 		// Send heartbeat to server.
 		sendHeartBeat := func() (bool, error) {
 			xl.Debugf("send heartbeat to server")
@@ -235,22 +236,27 @@ func (ctl *Control) heartbeatWorker() {
 			return false, nil
 		}
 
+		dur := time.Duration(heartbeatInterval) * time.Second
 		go wait.BackoffUntil(sendHeartBeat,
 			wait.NewFastBackoffManager(wait.FastBackoffOptions{
-				Duration:           time.Duration(ctl.sessionCtx.Common.Transport.HeartbeatInterval) * time.Second,
+				Duration:           dur,
 				InitDurationIfFail: time.Second,
 				Factor:             2.0,
 				Jitter:             0.1,
-				MaxDuration:        time.Duration(ctl.sessionCtx.Common.Transport.HeartbeatInterval) * time.Second,
+				MaxDuration:        dur,
 			}),
 			true, ctl.doneCh,
 		)
 	}
 
 	// Check heartbeat timeout.
-	if ctl.sessionCtx.Common.Transport.HeartbeatInterval > 0 && ctl.sessionCtx.Common.Transport.HeartbeatTimeout > 0 {
+	heartbeatTimeout := ctl.sessionCtx.Common.Transport.HeartbeatTimeout
+	if heartbeatInterval > 0 && heartbeatTimeout > 0 {
+		heartbeatTimeoutDur := time.Duration(heartbeatTimeout) * time.Second
 		go wait.Until(func() {
-			if time.Since(ctl.lastPong.Load().(time.Time)) > time.Duration(ctl.sessionCtx.Common.Transport.HeartbeatTimeout)*time.Second {
+			lastPongTime := ctl.lastPong.Load().(time.Time)
+			lastPongDur := time.Since(lastPongTime)
+			if lastPongDur > heartbeatTimeoutDur {
 				xl.Warnf("heartbeat timeout")
 				ctl.closeSession()
 				return

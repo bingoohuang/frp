@@ -15,6 +15,7 @@
 package client
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"io"
@@ -70,10 +71,7 @@ func (c *defaultConnectorImpl) Open() error {
 	if strings.EqualFold(c.cfg.Transport.Protocol, "quic") {
 		var tlsConfig *tls.Config
 		var err error
-		sn := c.cfg.Transport.TLS.ServerName
-		if sn == "" {
-			sn = c.cfg.ServerAddr
-		}
+		sn := cmp.Or(c.cfg.Transport.TLS.ServerName, c.cfg.ServerAddr)
 		if lo.FromPtr(c.cfg.Transport.TLS.Enable) {
 			tlsConfig, err = transport.NewClientTLSConfig(
 				c.cfg.Transport.TLS.CertFile,

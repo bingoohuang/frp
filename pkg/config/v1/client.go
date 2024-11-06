@@ -17,6 +17,7 @@ package v1
 import (
 	"cmp"
 	"os"
+	"strings"
 
 	"github.com/samber/lo"
 )
@@ -130,7 +131,8 @@ func (c *ClientTransportConfig) Complete() {
 	c.PoolCount = cmp.Or(c.PoolCount, 1)
 	c.TCPMux = cmp.Or(c.TCPMux, lo.ToPtr(true))
 	c.TCPMuxKeepaliveInterval = cmp.Or(c.TCPMuxKeepaliveInterval, 30)
-	if lo.FromPtr(c.TCPMux) {
+	isQuic := strings.EqualFold(c.Protocol, "quic")
+	if lo.FromPtr(c.TCPMux) && !isQuic {
 		// If TCPMux is enabled, heartbeat of application layer is unnecessary because we can rely on heartbeat in tcpmux.
 		c.HeartbeatInterval = cmp.Or(c.HeartbeatInterval, -1)
 		c.HeartbeatTimeout = cmp.Or(c.HeartbeatTimeout, -1)
