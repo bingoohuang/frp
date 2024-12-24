@@ -16,17 +16,19 @@ package visitor
 
 import (
 	"io"
+	"log"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
-	libio "github.com/fatedier/golib/io"
-
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/msg"
+	"github.com/fatedier/frp/pkg/socks5"
 	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/util"
 	"github.com/fatedier/frp/pkg/util/xlog"
+	libio "github.com/fatedier/golib/io"
 )
 
 type STCPVisitor struct {
@@ -78,19 +80,42 @@ func (sv *STCPVisitor) internalConnWorker() {
 
 func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 	xl := xlog.FromContextSafe(sv.ctx)
+	xl.Debugf("get a new stcp user connection")
+
 	defer userConn.Close()
 
-	xl.Debugf("get a new stcp user connection")
+	var target string
+	if sv.cfg.Socks5 {
+		logger := log.New(os.Stderr, "[socks5] ", log.LstdFlags)
+		socks5Srv := &socks5.Server{
+			Logger: logger,
+		}
+
+		req, err := socks5Srv.ParseRequest(userConn)
+		if err != nil {
+			xl.Warnf("parse socks5 request error: %v", err)
+			return
+		}
+
+		if req.Command != socks5.ConnectCommand {
+			xl.Warnf("unsupported socks5 command: %v", req.Command)
+			return
+		}
+
+		target = req.DestinationAddr.Address()
+	} else {
+		var err error
+		target, err = netpkg.ParseTargetHead(userConn)
+		if err != nil {
+			return
+		}
+	}
+
 	visitorConn, err := sv.helper.ConnectServer()
 	if err != nil {
 		return
 	}
 	defer visitorConn.Close()
-
-	target, err := netpkg.ParseTargetHead(userConn)
-	if err != nil {
-		return
-	}
 
 	now := time.Now().Unix()
 	newVisitorConnMsg := &msg.NewVisitorConn{
@@ -103,15 +128,13 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 
 		TargetAddr: target,
 	}
-	err = msg.WriteMsg(visitorConn, newVisitorConnMsg)
-	if err != nil {
+	if err := msg.WriteMsg(visitorConn, newVisitorConnMsg); err != nil {
 		xl.Warnf("send newVisitorConnMsg to server error: %v", err)
 		return
 	}
 
 	var newVisitorConnRespMsg msg.NewVisitorConnResp
-	err = msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second)
-	if err != nil {
+	if err := msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second); err != nil {
 		xl.Warnf("get newVisitorConnRespMsg error: %v", err)
 		return
 	}
@@ -135,6 +158,13 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 		var recycleFn func()
 		remote, recycleFn = libio.WithCompressionFromPool(remote)
 		defer recycleFn()
+	}
+
+	if sv.cfg.Socks5 {
+		if err := socks5.SendSuccessReply(userConn, visitorConn); err != nil {
+			xl.Warnf("send success reply error: %v", err)
+			return
+		}
 	}
 
 	libio.Join(userConn, remote)

@@ -41,7 +41,8 @@ type VisitorBaseConfig struct {
 	// BindPort is the port that visitor listens on.
 	// It can be less than 0, it means don't bind to the port and only receive connections redirected from
 	// other visitors. (This is not supported for SUDP now)
-	BindPort int `json:"bindPort,omitempty"`
+	BindPort int  `json:"bindPort,omitempty"`
+	Socks5   bool `json:"socks5,omitempty"`
 }
 
 func (c *VisitorBaseConfig) GetBaseConfig() *VisitorBaseConfig {
