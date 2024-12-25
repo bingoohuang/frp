@@ -15,6 +15,8 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
+	github.com/wzshiming/cmux v0.4.2
+	github.com/wzshiming/trie v0.3.1
 	github.com/xtaci/kcp-go/v5 v5.6.18
 	golang.org/x/crypto v0.29.0
 	golang.org/x/net v0.31.0

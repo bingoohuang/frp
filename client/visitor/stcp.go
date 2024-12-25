@@ -15,6 +15,7 @@
 package visitor
 
 import (
+	"context"
 	"io"
 	"log"
 	"net"
@@ -29,6 +30,9 @@ import (
 	"github.com/fatedier/frp/pkg/util/util"
 	"github.com/fatedier/frp/pkg/util/xlog"
 	libio "github.com/fatedier/golib/io"
+	"github.com/wzshiming/cmux"
+	"github.com/wzshiming/cmux/pattern"
+	"github.com/wzshiming/trie"
 )
 
 type STCPVisitor struct {
@@ -78,14 +82,121 @@ func (sv *STCPVisitor) internalConnWorker() {
 	}
 }
 
+// HandlePrefix handle the handler that matches the prefix
+func HandlePrefix(handlerTrie *trie.Trie[string], handler string, prefixes ...string) {
+	for _, prefix := range prefixes {
+		handlerTrie.Put([]byte(prefix), handler)
+	}
+}
+
+var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
+	handlerTrie := trie.NewTrie[string]()
+
+	HandlePrefix(handlerTrie, "socks5", pattern.Pattern[pattern.SOCKS5]...)
+	HandlePrefix(handlerTrie, "target", "TARGET ")
+
+	return func(conn net.Conn) (string, net.Conn, error) {
+		handler, buf, err := handlerTrie.MatchWithReader(conn)
+		if err != nil {
+			return "", nil, err
+		}
+		c := cmux.UnreadConn(conn, buf)
+		log.Printf("handlerTrie: %s", handler)
+		return handler, c, nil
+	}
+}()
+
+func (sv *STCPVisitor) DialContext(ctx context.Context, network, target string) (net.Conn, error) {
+	xl := xlog.FromContextSafe(sv.ctx)
+	visitorConn, err := sv.helper.ConnectServer()
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now().Unix()
+	newVisitorConnMsg := &msg.NewVisitorConn{
+		RunID:          sv.helper.RunID(),
+		ProxyName:      sv.cfg.ServerName,
+		SignKey:        util.GetAuthKey(sv.cfg.SecretKey, now),
+		Timestamp:      now,
+		UseEncryption:  sv.cfg.Transport.UseEncryption,
+		UseCompression: sv.cfg.Transport.UseCompression,
+
+		TargetAddr: target,
+	}
+	if err := msg.WriteMsg(visitorConn, newVisitorConnMsg); err != nil {
+		xl.Warnf("send newVisitorConnMsg to server error: %v", err)
+		return nil, err
+	}
+
+	var newVisitorConnRespMsg msg.NewVisitorConnResp
+	if err := msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second); err != nil {
+		xl.Warnf("get newVisitorConnRespMsg error: %v", err)
+		return nil, err
+	}
+
+	if newVisitorConnRespMsg.Error != "" {
+		xl.Warnf("start new visitor connection error: %s", newVisitorConnRespMsg.Error)
+		return nil, err
+	}
+
+	var remote io.ReadWriteCloser
+	remote = visitorConn
+	if sv.cfg.Transport.UseEncryption {
+		remote, err = libio.WithEncryption(remote, []byte(sv.cfg.SecretKey))
+		if err != nil {
+			xl.Errorf("create encryption stream error: %v", err)
+			return nil, err
+		}
+	}
+	var recycleFn func()
+
+	if sv.cfg.Transport.UseCompression {
+		remote, recycleFn = libio.WithCompressionFromPool(remote)
+	}
+
+	return &readWriteCloserConn{ReadWriteCloser: remote, Original: visitorConn, recycleFn: recycleFn}, nil
+}
+
+type readWriteCloserConn struct {
+	io.ReadWriteCloser
+	Original  net.Conn
+	recycleFn func()
+}
+
+// Add these methods to implement net.Conn interface
+func (rwc *readWriteCloserConn) LocalAddr() net.Addr           { return rwc.Original.LocalAddr() }
+func (rwc *readWriteCloserConn) RemoteAddr() net.Addr          { return rwc.Original.RemoteAddr() }
+func (rwc *readWriteCloserConn) SetDeadline(t time.Time) error { return rwc.Original.SetDeadline(t) }
+func (rwc *readWriteCloserConn) SetReadDeadline(t time.Time) error {
+	return rwc.Original.SetReadDeadline(t)
+}
+func (rwc *readWriteCloserConn) SetWriteDeadline(t time.Time) error {
+	return rwc.Original.SetWriteDeadline(t)
+}
+
+func (rwc *readWriteCloserConn) Close() error {
+	if rwc.recycleFn != nil {
+		rwc.recycleFn()
+	}
+	return rwc.Original.Close()
+}
+
 func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 	xl := xlog.FromContextSafe(sv.ctx)
 	xl.Debugf("get a new stcp user connection")
 
 	defer userConn.Close()
 
+	proxyType, userConn, err := muxer(userConn)
+	if err != nil {
+		xl.Warnf("muxer error: %v", err)
+		return
+	}
+
 	var target string
-	if sv.cfg.Socks5 {
+	switch proxyType {
+	case "socks5":
 		logger := log.New(os.Stderr, "[socks5] ", log.LstdFlags)
 		socks5Srv := &socks5.Server{
 			Logger: logger,
@@ -103,7 +214,7 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 		}
 
 		target = req.DestinationAddr.Address()
-	} else {
+	case "target":
 		var err error
 		target, err = netpkg.ParseTargetHead(userConn)
 		if err != nil {
@@ -111,60 +222,21 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 		}
 	}
 
-	visitorConn, err := sv.helper.ConnectServer()
+	remote, err := sv.DialContext(sv.ctx, "", target)
 	if err != nil {
+		xl.Warnf("dial context error: %v", err)
 		return
 	}
-	defer visitorConn.Close()
+	defer remote.Close()
 
-	now := time.Now().Unix()
-	newVisitorConnMsg := &msg.NewVisitorConn{
-		RunID:          sv.helper.RunID(),
-		ProxyName:      sv.cfg.ServerName,
-		SignKey:        util.GetAuthKey(sv.cfg.SecretKey, now),
-		Timestamp:      now,
-		UseEncryption:  sv.cfg.Transport.UseEncryption,
-		UseCompression: sv.cfg.Transport.UseCompression,
-
-		TargetAddr: target,
-	}
-	if err := msg.WriteMsg(visitorConn, newVisitorConnMsg); err != nil {
-		xl.Warnf("send newVisitorConnMsg to server error: %v", err)
-		return
-	}
-
-	var newVisitorConnRespMsg msg.NewVisitorConnResp
-	if err := msg.ReadMsgIntoTimeout(visitorConn, &newVisitorConnRespMsg, 10*time.Second); err != nil {
-		xl.Warnf("get newVisitorConnRespMsg error: %v", err)
-		return
-	}
-
-	if newVisitorConnRespMsg.Error != "" {
-		xl.Warnf("start new visitor connection error: %s", newVisitorConnRespMsg.Error)
-		return
-	}
-
-	var remote io.ReadWriteCloser
-	remote = visitorConn
-	if sv.cfg.Transport.UseEncryption {
-		remote, err = libio.WithEncryption(remote, []byte(sv.cfg.SecretKey))
-		if err != nil {
-			xl.Errorf("create encryption stream error: %v", err)
-			return
-		}
-	}
-
-	if sv.cfg.Transport.UseCompression {
-		var recycleFn func()
-		remote, recycleFn = libio.WithCompressionFromPool(remote)
-		defer recycleFn()
-	}
-
-	if sv.cfg.Socks5 {
-		if err := socks5.SendSuccessReply(userConn, visitorConn); err != nil {
+	switch proxyType {
+	case "socks5":
+		if err := socks5.SendSuccessReply(userConn, remote); err != nil {
 			xl.Warnf("send success reply error: %v", err)
 			return
 		}
+	case "target":
+		xl.Debugf("target: %s", target)
 	}
 
 	libio.Join(userConn, remote)
