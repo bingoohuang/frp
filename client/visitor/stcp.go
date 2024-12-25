@@ -23,16 +23,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatedier/frp/pkg/cmux"
+	"github.com/fatedier/frp/pkg/cmux/pattern"
 	v1 "github.com/fatedier/frp/pkg/config/v1"
+	"github.com/fatedier/frp/pkg/httpproxy"
 	"github.com/fatedier/frp/pkg/msg"
 	"github.com/fatedier/frp/pkg/socks5"
+	"github.com/fatedier/frp/pkg/trie"
 	netpkg "github.com/fatedier/frp/pkg/util/net"
 	"github.com/fatedier/frp/pkg/util/util"
 	"github.com/fatedier/frp/pkg/util/xlog"
 	libio "github.com/fatedier/golib/io"
-	"github.com/wzshiming/cmux"
-	"github.com/wzshiming/cmux/pattern"
-	"github.com/wzshiming/trie"
 )
 
 type STCPVisitor struct {
@@ -92,6 +93,7 @@ func HandlePrefix(handlerTrie *trie.Trie[string], handler string, prefixes ...st
 var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
 	handlerTrie := trie.NewTrie[string]()
 
+	HandlePrefix(handlerTrie, "http", append(pattern.Pattern[pattern.HTTP], pattern.Pattern[pattern.HTTP2]...)...)
 	HandlePrefix(handlerTrie, "socks5", pattern.Pattern[pattern.SOCKS5]...)
 	HandlePrefix(handlerTrie, "target", "TARGET ")
 
@@ -105,6 +107,19 @@ var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
 		return handler, c, nil
 	}
 }()
+
+func (sv *STCPVisitor) newHttpServeConn() (ServeConn, error) {
+	s, err := httpproxy.NewSimpleServer("http://:12345")
+	if err != nil {
+		return nil, err
+	}
+	s.Server.BaseContext = func(listener net.Listener) context.Context {
+		return sv.ctx
+	}
+
+	s.ProxyDial = sv.DialContext
+	return NewHttpServeConn(&s.Server), nil
+}
 
 func (sv *STCPVisitor) DialContext(ctx context.Context, network, target string) (net.Conn, error) {
 	xl := xlog.FromContextSafe(sv.ctx)
@@ -196,6 +211,14 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 
 	var target string
 	switch proxyType {
+	case "http":
+		httpServeConn, err := sv.newHttpServeConn()
+		if err != nil {
+			xl.Warnf("new http serve conn error: %v", err)
+			return
+		}
+		httpServeConn.ServeConn(userConn)
+		return
 	case "socks5":
 		logger := log.New(os.Stderr, "[socks5] ", log.LstdFlags)
 		socks5Srv := &socks5.Server{

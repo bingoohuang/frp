@@ -147,10 +147,6 @@ github.com/templexxx/xorsimd v0.4.3 h1:9AQTFHd7Bhk3dIT7Al2XeBX5DWOvsUPZCuhyAtNbH
 github.com/templexxx/xorsimd v0.4.3/go.mod h1:oZQcD6RFDisW2Am58dSAGwwL6rHjbzrlu25VDqfWkQg=
 github.com/tjfoc/gmsm v1.4.1 h1:aMe1GlZb+0bLjn+cKTPEvvn9oUEBlJitaZiiBwsbgho=
 github.com/tjfoc/gmsm v1.4.1/go.mod h1:j4INPkHWMrhJb38G+J6W4Tw0AbuN8Thu3PbdVYhVcTE=
-github.com/wzshiming/cmux v0.4.2 h1:tI73lL5ztVfiqw7R5m5BkxT1+vQ2PBo/oV6qPbNGPiA=
-github.com/wzshiming/cmux v0.4.2/go.mod h1:JgE61QfZAjEyNMX0iZo9zIKY6pr9bHVY132yYPwHW5U=
-github.com/wzshiming/trie v0.3.1 h1:YpuoqmEQFJiW0mns/mM6Qk4kdWrXc8kc28/KR1vn0m8=
-github.com/wzshiming/trie v0.3.1/go.mod h1:c9thxXTh4KcGkejt4sUsO4c5GUmWpxeWzOJ7AZJaI+8=
 github.com/xtaci/kcp-go/v5 v5.6.18 h1:7oV4mc272pcnn39/13BB11Bx7hJM4ogMIEokJYVWn4g=
 github.com/xtaci/kcp-go/v5 v5.6.18/go.mod h1:75S1AKYYzNUSXIv30h+jPKJYZUwqpfvLshu63nCNSOM=
 github.com/xtaci/lossyconn v0.0.0-20200209145036-adba10fffc37 h1:EWU6Pktpas0n8lLQwDsRyZfmkPeRbdgPtW609es+/9E=
