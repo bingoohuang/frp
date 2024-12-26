@@ -19,7 +19,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"strconv"
 	"time"
 
@@ -28,6 +27,7 @@ import (
 	v1 "github.com/fatedier/frp/pkg/config/v1"
 	"github.com/fatedier/frp/pkg/httpproxy"
 	"github.com/fatedier/frp/pkg/msg"
+	"github.com/fatedier/frp/pkg/socks4"
 	"github.com/fatedier/frp/pkg/socks5"
 	"github.com/fatedier/frp/pkg/trie"
 	netpkg "github.com/fatedier/frp/pkg/util/net"
@@ -95,6 +95,7 @@ var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
 
 	HandlePrefix(handlerTrie, "http", append(pattern.Pattern[pattern.HTTP], pattern.Pattern[pattern.HTTP2]...)...)
 	HandlePrefix(handlerTrie, "socks5", pattern.Pattern[pattern.SOCKS5]...)
+	HandlePrefix(handlerTrie, "socks4", pattern.Pattern[pattern.SOCKS4]...)
 	HandlePrefix(handlerTrie, "target", "TARGET ")
 
 	return func(conn net.Conn) (string, net.Conn, error) {
@@ -108,6 +109,38 @@ var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
 	}
 }()
 
+func (sv *STCPVisitor) newSocks4ServeConn() (ServeConn, error) {
+	s, err := socks4.NewSimpleServer("socks4://:12345")
+	if err != nil {
+		return nil, err
+	}
+	if len(sv.cfg.Users) > 0 {
+		s.Authentication = socks4.AuthenticationFunc(func(cmd socks4.Command, username string) bool {
+			_, ok := sv.cfg.Users[username]
+			return ok
+		})
+	}
+	s.Context = sv.ctx
+	s.ProxyDial = sv.DialContext
+
+	return s, nil
+}
+
+func (sv *STCPVisitor) newSocks5ServeConn() (ServeConn, error) {
+	s, err := socks5.NewSimpleServer("socks5://:12345")
+	if err != nil {
+		return nil, err
+	}
+	if len(sv.cfg.Users) > 0 {
+		s.Authentication = socks5.AuthenticationFunc(func(cmd socks5.Command, username, password string) bool {
+			return sv.cfg.Users[username] == password
+		})
+	}
+	s.Context = sv.ctx
+	s.ProxyDial = sv.DialContext
+	return s, nil
+}
+
 func (sv *STCPVisitor) newHttpServeConn() (ServeConn, error) {
 	s, err := httpproxy.NewSimpleServer("http://:12345")
 	if err != nil {
@@ -115,6 +148,11 @@ func (sv *STCPVisitor) newHttpServeConn() (ServeConn, error) {
 	}
 	s.Server.BaseContext = func(listener net.Listener) context.Context {
 		return sv.ctx
+	}
+	if len(sv.cfg.Users) > 0 {
+		s.Authentication = httpproxy.BasicAuthFunc(func(username, password string) bool {
+			return sv.cfg.Users[username] == password
+		})
 	}
 
 	s.ProxyDial = sv.DialContext
@@ -212,55 +250,43 @@ func (sv *STCPVisitor) handleConn(userConn net.Conn) {
 	var target string
 	switch proxyType {
 	case "http":
-		httpServeConn, err := sv.newHttpServeConn()
+		sc, err := sv.newHttpServeConn()
 		if err != nil {
 			xl.Warnf("new http serve conn error: %v", err)
 			return
 		}
-		httpServeConn.ServeConn(userConn)
+		sc.ServeConn(userConn)
+		return
+	case "socks4":
+		sc, err := sv.newSocks4ServeConn()
+		if err != nil {
+			xl.Warnf("new socks4 serve conn error: %v", err)
+			return
+		}
+		sc.ServeConn(userConn)
 		return
 	case "socks5":
-		logger := log.New(os.Stderr, "[socks5] ", log.LstdFlags)
-		socks5Srv := &socks5.Server{
-			Logger: logger,
-		}
-
-		req, err := socks5Srv.ParseRequest(userConn)
+		sc, err := sv.newSocks5ServeConn()
 		if err != nil {
-			xl.Warnf("parse socks5 request error: %v", err)
+			xl.Warnf("new socks5 serve conn error: %v", err)
 			return
 		}
+		sc.ServeConn(userConn)
+		return
 
-		if req.Command != socks5.ConnectCommand {
-			xl.Warnf("unsupported socks5 command: %v", req.Command)
-			return
-		}
-
-		target = req.DestinationAddr.Address()
 	case "target":
 		var err error
 		target, err = netpkg.ParseTargetHead(userConn)
 		if err != nil {
 			return
 		}
-	}
-
-	remote, err := sv.DialContext(sv.ctx, "", target)
-	if err != nil {
-		xl.Warnf("dial context error: %v", err)
-		return
-	}
-	defer remote.Close()
-
-	switch proxyType {
-	case "socks5":
-		if err := socks5.SendSuccessReply(userConn, remote); err != nil {
-			xl.Warnf("send success reply error: %v", err)
+		remote, err := sv.DialContext(sv.ctx, "", target)
+		if err != nil {
+			xl.Warnf("dial context error: %v", err)
 			return
 		}
-	case "target":
-		xl.Debugf("target: %s", target)
-	}
+		defer remote.Close()
 
-	libio.Join(userConn, remote)
+		libio.Join(userConn, remote)
+	}
 }

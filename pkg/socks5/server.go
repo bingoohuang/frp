@@ -211,11 +211,15 @@ func (s *Server) handleConnect(req *Request) error {
 	defer target.Close()
 
 	localAddr := target.LocalAddr()
-	local, ok := localAddr.(*net.TCPAddr)
-	if !ok {
-		return fmt.Errorf("connect to %v failed: local address is %s://%s", req.DestinationAddr, localAddr.Network(), localAddr.String())
+	_, port, err := net.SplitHostPort(localAddr.String())
+	if err != nil {
+		return fmt.Errorf("connect to %v failed: local address is %s://%s", req.DestinationAddr, localAddr.Network(), localAddr)
 	}
-	bind := address{IP: local.IP, Port: local.Port}
+	intPort, err := strconv.Atoi(port)
+	if err != nil {
+		return fmt.Errorf("connect to %v failed: local address is %s://%s", req.DestinationAddr, localAddr.Network(), localAddr)
+	}
+	bind := address{IP: net.ParseIP("0.0.0.0"), Port: intPort}
 	if err := sendReply(req.Conn, successReply, &bind); err != nil {
 		return fmt.Errorf("failed to send reply: %v", err)
 	}
