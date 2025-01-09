@@ -17,7 +17,6 @@ package visitor
 import (
 	"context"
 	"io"
-	"log"
 	"net"
 	"strconv"
 	"time"
@@ -104,7 +103,6 @@ var muxer = func() func(conn net.Conn) (string, net.Conn, error) {
 			return "", nil, err
 		}
 		c := cmux.UnreadConn(conn, buf)
-		log.Printf("handlerTrie: %s", handler)
 		return handler, c, nil
 	}
 }()
