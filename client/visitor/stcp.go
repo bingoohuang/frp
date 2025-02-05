@@ -16,6 +16,7 @@ package visitor
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -188,7 +189,7 @@ func (sv *STCPVisitor) DialContext(ctx context.Context, network, target string) 
 
 	if newVisitorConnRespMsg.Error != "" {
 		xl.Warnf("start new visitor connection error: %s", newVisitorConnRespMsg.Error)
-		return nil, err
+		return nil, fmt.Errorf("error: %s", newVisitorConnRespMsg.Error)
 	}
 
 	var remote io.ReadWriteCloser
