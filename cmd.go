@@ -3,6 +3,7 @@ package frp
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,38 +28,35 @@ func Run(cfgFile string) error {
 	var cc struct {
 		ServerAddr string `json:"serverAddr,omitempty"`
 	}
-	_ = yaml.UnmarshalStrict(ss.Pick1(os.ReadFile(util.ExpandFile(cfgFile))), &cc)
+	if err := yaml.UnmarshalStrict(ss.Pick1(os.ReadFile(util.ExpandFile(cfgFile))), &cc); err != nil {
+		stdlog.Printf("W! unmarshal frp config file %s error: %v", cfgFile, err)
+	}
 	if cc.ServerAddr == "" {
 		svrCfg, err := config.LoadServerConfig(cfgFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			stdlog.Fatalf("load server config error: %v", err)
 		}
 		svrCfg.Complete()
 		warning, err := validation.ValidateServerConfig(svrCfg)
 		if warning != nil {
-			fmt.Printf("WARNING: %v\n", warning)
+			stdlog.Printf("WARNING: %v\n", warning)
 		}
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			stdlog.Fatalf("validate server config error: %v", err)
 		}
 
 		if err := runServer(cfgFile, svrCfg); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			stdlog.Fatalf("run server error: %v", err)
 		}
 		return nil
 	}
 
 	// Do not show command usage here.
-	err := runClient(cfgFile)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := runClient(cfgFile); err != nil {
+		stdlog.Fatalf("run client error: %v", err)
 	}
-	return nil
 
+	return nil
 }
 
 func handleTermSignal(svr *client.Service) {
@@ -71,12 +69,12 @@ func handleTermSignal(svr *client.Service) {
 func runClient(cfgFilePath string) error {
 	cfg, proxyCfgs, visitorCfgs, err := config.LoadClientConfig(cfgFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("load client config %s error: %v", cfgFilePath, err)
 	}
 
 	warning, err := validation.ValidateAllClientConfig(cfg, proxyCfgs, visitorCfgs)
 	if warning != nil {
-		fmt.Printf("WARNING: %v\n", warning)
+		stdlog.Printf("WARNING: %v\n", warning)
 	}
 	if err != nil {
 		return err

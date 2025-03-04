@@ -16,87 +16,62 @@ package log
 
 import (
 	"bytes"
-	"os"
-
-	"github.com/fatedier/golib/log"
+	"log"
 )
 
-var (
-	TraceLevel = log.TraceLevel
-	DebugLevel = log.DebugLevel
-	InfoLevel  = log.InfoLevel
-	WarnLevel  = log.WarnLevel
-	ErrorLevel = log.ErrorLevel
+type Level int
+
+const (
+	TraceLevel Level = iota
+	DebugLevel
+	InfoLevel
+	WarnLevel
+	ErrorLevel
 )
-
-var Logger *log.Logger
-
-func init() {
-	Logger = log.New(
-		log.WithCaller(true),
-		log.AddCallerSkip(1),
-		log.WithLevel(log.InfoLevel),
-	)
-}
 
 func InitLogger(logPath string, levelStr string, maxDays int, disableLogColor bool) {
-	options := []log.Option{}
-	if logPath == "console" {
-		if !disableLogColor {
-			options = append(options,
-				log.WithOutput(log.NewConsoleWriter(log.ConsoleConfig{
-					Colorful: true,
-				}, os.Stdout)),
-			)
-		}
-	} else {
-		writer := log.NewRotateFileWriter(log.RotateFileConfig{
-			FileName: logPath,
-			Mode:     log.RotateFileModeDaily,
-			MaxDays:  maxDays,
-		})
-		writer.Init()
-		options = append(options, log.WithOutput(writer))
-	}
 
-	level, err := log.ParseLevel(levelStr)
-	if err != nil {
-		level = log.InfoLevel
-	}
-	options = append(options, log.WithLevel(level))
-	Logger = Logger.WithOptions(options...)
 }
 
 func Errorf(format string, v ...interface{}) {
-	Logger.Errorf(format, v...)
+	log.Printf("E! "+format, v...)
 }
 
 func Warnf(format string, v ...interface{}) {
-	Logger.Warnf(format, v...)
+	log.Printf("W! "+format, v...)
 }
 
 func Infof(format string, v ...interface{}) {
-	Logger.Infof(format, v...)
+	log.Printf(format, v...)
 }
 
 func Debugf(format string, v ...interface{}) {
-	Logger.Debugf(format, v...)
+	log.Printf("D! "+format, v...)
 }
 
 func Tracef(format string, v ...interface{}) {
-	Logger.Tracef(format, v...)
+	log.Printf("D! "+format, v...)
 }
 
-func Logf(level log.Level, offset int, format string, v ...interface{}) {
-	Logger.Logf(level, offset, format, v...)
+func Logf(level Level, offset int, format string, v ...interface{}) {
+	switch level {
+	case ErrorLevel:
+		log.Printf("E! "+format, v...)
+	case WarnLevel:
+		log.Printf("W! "+format, v...)
+	case InfoLevel:
+		log.Printf(format, v...)
+	default:
+		log.Printf("D! "+format, v...)
+	}
 }
 
 type WriteLogger struct {
-	level  log.Level
+	level  Level
 	offset int
 }
 
-func NewWriteLogger(level log.Level, offset int) *WriteLogger {
+func NewWriteLogger(level Level, offset int) *WriteLogger {
 	return &WriteLogger{
 		level:  level,
 		offset: offset,
@@ -104,6 +79,6 @@ func NewWriteLogger(level log.Level, offset int) *WriteLogger {
 }
 
 func (w *WriteLogger) Write(p []byte) (n int, err error) {
-	Logger.Log(w.level, w.offset, string(bytes.TrimRight(p, "\n")))
+	Logf(w.level, w.offset, string(bytes.TrimRight(p, "\n")))
 	return len(p), nil
 }
